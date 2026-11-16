@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# wallstreet widget: table of the most active stocks and the biggest movers
+# wallstreet widget: table of the most active stocks and the biggest movers, selectable
 #
 # Part of wallstreet.  Copyright 2014-2026 Dustin Kirkland
 # <dustin.kirkland@gmail.com>, macOS port and data sources 2026.
@@ -14,18 +14,8 @@ quit() {
 }
 trap quit INT QUIT TERM
 
-# Redraw every minute, and at once when the pane changes its size
-size=
-age=60
+# Interactive: click a row or move with the arrow keys, the chart pane follows.
+# wsdata redraws by itself every minute and when the pane changes its size.
 while true; do
-	now=$(stty size 2>/dev/null)
-	if [ "$now" != "$size" ] || [ "$age" -ge 60 ]; then
-		size=$now
-		age=0
-		out=$("$WSDATA" table)
-		clear
-		printf '%s\n' "$out"
-	fi
-	sleep 1
-	age=$((age + 1))
+	"$WSDATA" browse || sleep 2
 done

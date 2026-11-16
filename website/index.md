@@ -1,7 +1,7 @@
 <!--# block name="none" --><!--# endblock -->
 # wallstreet — Live Stock Tickers for Your Terminal
 
-> wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.
+> wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, the chart of the stock you click, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes and charts come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.
 
 This is the Markdown version of https://wallstreet.celox.io/ for agents and text tools. A short summary with every link lives at https://wallstreet.celox.io/llms.txt.
 
@@ -18,7 +18,7 @@ Files in the current release:
 
 ## Features
 
-- **The quote table** — The most active stocks, the Nasdaq-100 movers, advancers and decliners — symbol, name, last price, change and percent, green for up and red for down. It redraws every minute and never prints more rows than fit.
+- **Click a stock, see its chart** — The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today by the minute, or a month, three months or a year.
 - **Three tickers** — Across the bottom of the window: the day's biggest gainers in green, the biggest losers in red and the headlines of all feeds in yellow, each scrolling at its own pace.
 - **News beside the numbers** — A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.
 - **No key, no account** — The quotes come from the Nasdaq market-movers interface, the news from public RSS feeds of BBC, CNBC, MarketWatch and the WSJ. Nothing to register, nothing to configure, and wallstreet itself collects nothing.
@@ -27,15 +27,15 @@ Files in the current release:
 
 ### What it looks like
 
-- **The whole screen** — Quotes, feed reader, picture and three tickers — here in demo mode. ([image](https://wallstreet.celox.io/assets/gallery/wallstreet.jpg))
-- **Quote table** — Four sections, fitted to the height of the pane. ([image](https://wallstreet.celox.io/assets/gallery/table.jpg))
-- **Feed reader** — The newest articles, reloading by themselves. ([image](https://wallstreet.celox.io/assets/gallery/newsboat.jpg))
+- **The whole screen** — Quotes, chart, feed reader, picture and three tickers — here in demo mode. ([image](https://wallstreet.celox.io/assets/gallery/wallstreet.jpg))
+- **Chart** — The selected stock over three months, drawn with braille characters. ([image](https://wallstreet.celox.io/assets/gallery/chart.jpg))
+- **Quote table** — Four sections, one row selected. ([image](https://wallstreet.celox.io/assets/gallery/table.jpg))
 - **Headlines** — One headline after the other, with the time. ([image](https://wallstreet.celox.io/assets/gallery/headlines.jpg))
 
 ## Install
 
 1. **Install** — With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, `curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh` puts it into `~/.local` and names what is missing.
-2. **Run** — Type `wallstreet` in a terminal — the wider the window, the more panes. `wallstreet --demo` shows invented data instead of the day's news.
+2. **Run** — Type `wallstreet` in a terminal — the wider the window, the more panes. Click a stock to see its chart. `wallstreet --demo` shows invented data instead of the day's news.
 3. **Quit** — Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.
 
 ## Verify
@@ -61,7 +61,7 @@ Files in the current release:
 ## Limits
 
 - wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.
-- The quotes are the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols and no history.
+- The table shows the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols. Charts go back one year at most.
 - The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.
 - It needs tmux and Python 3.9 or newer; there is no Windows version.
 - Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done.

@@ -28,6 +28,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](share/wallstreet/wsdata)
 [![Dependencies](https://img.shields.io/badge/python%20deps-none-informational)](#how-it-works)
 [![Demo mode](https://img.shields.io/badge/demo%20mode-offline-blueviolet)](#demo-mode)
+[![Interactive](https://img.shields.io/badge/mouse%20%26%20keys-interactive-blue)](#usage)
 [![Terminal](https://img.shields.io/badge/interface-terminal-black?logo=gnubash&logoColor=white)](#usage)
 [![tmux](https://img.shields.io/badge/runs%20in-tmux-1BB91F?logo=tmux&logoColor=white)](#how-it-works)
 [![No config](https://img.shields.io/badge/config-none-informational)](#usage)
@@ -56,8 +57,9 @@
 </div>
 
 wallstreet turns a terminal into the screen on a trading desk: a table of the most active
-stocks, three tickers running across the bottom — gainers, losers, headlines — a feed
-reader and the day's press photos as ASCII art. The numbers and the news are real.
+stocks, the chart of the one you click, three tickers running across the bottom — gainers,
+losers, headlines — a feed reader and the day's press photos as ASCII art. The numbers and
+the news are real.
 
 It started as the sister program of
 [Dustin Kirkland's hollywood](https://github.com/dustinkirkland/hollywood). The pages that
@@ -65,7 +67,7 @@ version scraped are gone or refuse scripts, and it needs Linux; this project giv
 sources that answer, runs on macOS and Linux, and has a demo mode for when the content
 should not be the day's news.
 
-![wallstreet in demo mode: a quote table with most active stocks, index movers and advancers on the left, a feed reader in the middle, a chart as ASCII art on the right, and three tickers for gainers, losers and headlines below](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/wallstreet.png)
+![wallstreet in demo mode: the quote table with one row selected on the left, the chart of that stock beside it, below the chart a feed reader and a picture as ASCII art, and three tickers for gainers, losers and headlines at the bottom](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/wallstreet.png)
 
 *The pictures in this README are taken in demo mode: the companies and headlines are invented.*
 
@@ -120,18 +122,29 @@ wallstreet --demo       # invented data, nothing is fetched
 wallstreet --version
 ```
 
-**To quit, press Ctrl-C in any pane.** Started from a plain terminal, wallstreet creates a
-tmux session named `wallstreet` and closes it again; inside an existing tmux session it
-opens one window there and leaves the rest alone.
+| Where | Input | What it does |
+|---|---|---|
+| quote table | click on a row | select that stock |
+| quote table | `↑` `↓`, `j` `k`, mouse wheel | move the selection |
+| quote table or chart | `1` `2` `3` `4` | span of the chart: day, month, three months, year |
+| chart | click, `→` `←` | next or previous span |
+| any pane | `Ctrl-C` | quit |
 
-The layout follows the terminal: from 150 columns all six panes, below that without the
+Clicks need tmux's mouse support. Started from a plain terminal, wallstreet creates a tmux
+session named `wallstreet`, switches the mouse on there and closes the session again when
+you quit. Inside an existing tmux session it opens one window, leaves the rest alone and
+does not touch your mouse setting — the keys work either way, and `set -g mouse on` makes
+the clicks work too. A click on a pane also makes it the one that gets the keys.
+
+The layout follows the terminal: from 150 columns all seven panes, below that without the
 picture, below 110 columns the quote table and the tickers only.
 
 ## What is on the screen
 
 | Pane | What it shows |
 |---|---|
-| **Quotes** | most active stocks by dollar volume, Nasdaq-100 movers, advancers, decliners — symbol, name, last price, change, percent; green for up, red for down; redrawn every minute and when the pane is resized |
+| **Quotes** | most active stocks by dollar volume, Nasdaq-100 movers, advancers, decliners — symbol, name, last price, change, percent; green for up, red for down; one row is selected; redrawn every minute and when the pane is resized |
+| **Chart** | the course of the selected stock in braille characters — today by the minute, or a month, three months or a year of daily closes — with last price, change over the span and the axis values |
 | **Gainers ticker** | the day's biggest gainers, scrolling, green |
 | **Losers ticker** | the day's biggest losers, scrolling, red |
 | **Headlines ticker** | headlines from all feeds, shuffled, scrolling, yellow |
@@ -140,13 +153,14 @@ picture, below 110 columns the quote table and the tickers only.
 
 | | |
 |---|---|
-| ![The quote table alone, four sections](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/table.png) | ![Headlines, one after the other](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/headlines.png) |
+| ![The chart pane: symbol, price, change, span tabs and the course of three months](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The quote table alone, four sections, one row selected](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/table.png) |
 
 ## Data sources
 
 | What | From | Refreshed |
 |---|---|---|
 | quotes, gainers, losers | `api.nasdaq.com/api/marketmovers` — no key, no account | every 55 s |
+| chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | headlines, feed reader, pictures | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
 
 The quotes are the day's movements on the US exchanges; outside trading hours the last
@@ -167,8 +181,9 @@ screen and the pane says so once there is none.
 wallstreet --demo
 ```
 
-Twenty companies that do not exist, with prices that drift a little every minute, two dozen
-invented headlines, and a chart for the picture pane. Nothing is fetched. Use it for
+Twenty companies that do not exist, with prices that drift a little every minute and a
+course for every span that ends at the price in the table, two dozen invented headlines,
+and a picture for the picture pane. Nothing is fetched. Use it for
 screenshots, presentations and screens in the background of a film — or on a machine
 without a network.
 
@@ -179,7 +194,9 @@ script from `lib/wallstreet/`. All of them get their content from **`share/walls
 — one Python file, standard library only — which fetches, caches and renders:
 
 ```sh
-share/wallstreet/wsdata table            # the quote table, fitted to the terminal
+share/wallstreet/wsdata browse           # the quote table, interactive
+share/wallstreet/wsdata chart            # the chart of the selected stock
+share/wallstreet/wsdata table            # the quote table as plain output
 share/wallstreet/wsdata movers up        # one line of gainers
 share/wallstreet/wsdata headlines        # one headline per line
 share/wallstreet/wsdata image            # path of a downloaded picture
@@ -187,7 +204,9 @@ share/wallstreet/wsdata marquee yellow 0.08 "some text"
 ```
 
 The cache lives in `~/Library/Caches/wallstreet` (macOS) or `~/.cache/wallstreet`: quotes
-for 55 seconds, feeds for 5 minutes, pictures for a day. Several panes share one request,
+for 55 seconds, feeds for 5 minutes, pictures for a day. The table and the chart are two
+processes in two panes; what is selected travels through one small file in the same
+directory. Several panes share one request,
 and when the network is down the last good state is used. No telemetry, no account, no
 configuration.
 
@@ -220,7 +239,8 @@ python3 tools/badges.py                     # the three counted README badges
 
 The tests load `wsdata` with a private cache directory and either the demo data or a
 patched fetch: the URL filter, the cache (reuse, replacement, stale copy on failure), the
-table (never wider or higher than the terminal, never ending on a bare heading), the
+table (never wider or higher than the terminal, never ending on a bare heading), keyboard
+and mouse input, the selection file, the chart (no gaps in the line, fits its pane), the
 ticker, feed parsing with hostile input, and the shell side of every pane.
 
 A release is a tag: `git tag v1.2.3 && git push --tags`. The workflow checks that the tag
@@ -231,6 +251,8 @@ matches `VERSION`, runs the tests, builds `wallstreet.tar.gz`, `install.sh` and
 
 - **"No market data available right now."** The Nasdaq API did not answer and there is no
   cached copy yet. It is tried again every minute; `wallstreet --demo` works without it.
+- **A click does nothing.** tmux's mouse support is off in your own session: `tmux set -g mouse on`, or use the arrow keys.
+- **"No chart data for this symbol right now."** Nasdaq has no course for some warrants and units among the movers; pick another row.
 - **The feed reader or the picture is missing.** `newsboat` or `img2txt` is not installed,
   or the terminal is narrower than 110 or 150 columns.
 - **A feed shows nothing.** Feeds move; check the URL in `newsboat.urls` in a browser.

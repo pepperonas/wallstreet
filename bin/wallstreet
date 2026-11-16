@@ -18,7 +18,7 @@
 # limitations under the License.
 
 PKG="wallstreet"
-VERSION="1.0.0"
+VERSION="1.1.0"
 widget_dir="$(cd "$(dirname "$0")/../lib/$PKG" && pwd)"
 
 case "$1" in
@@ -66,18 +66,28 @@ trap cleanup EXIT HUP INT QUIT TERM
 # Panes take their environment from the tmux server, not from this script
 run="env WALLSTREET_DEMO=${WALLSTREET_DEMO:-0}"
 
-# Layout: the quote table, the feed reader and a news picture on top,
-# three tickers of three rows each below.  Narrow terminals get fewer panes.
+# Layout: the quote table on the left, beside it the chart of the selected
+# stock above the feed reader and a news picture, three tickers of three rows
+# each below.  Narrow terminals get fewer panes.
 win=$(tmux new-window -P -F '#{window_id}' -n $PKG "$run $widget_dir/quotes") || exit 1
 quotes=$(tmux list-panes -t "$win" -F '#{pane_id}' | head -n1)
 width=$(tmux display-message -p -t "$win" '#{window_width}')
+# Clicks reach the quote table only with tmux's mouse support.  A session this
+# script created gets it; somebody else's session keeps its own setting, the
+# arrow keys work either way.
+[ -n "$WALLSTREET_OWN_SESSION" ] && tmux set-option -t $PKG mouse on >/dev/null 2>&1
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker topNews" >/dev/null 2>&1
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker -" >/dev/null 2>&1
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker +" >/dev/null 2>&1
 if [ "$width" -ge 110 ]; then
-	news=$(tmux split-window -h -l $((width - 81)) -P -F '#{pane_id}' -t "$quotes" "$run $widget_dir/newsboat" 2>/dev/null)
+	chart=$(tmux split-window -h -l $((width - 81)) -P -F '#{pane_id}' -t "$quotes" "$run $widget_dir/chart" 2>/dev/null)
+	height=$(tmux display-message -p -t "$quotes" '#{pane_height}')
+	news=
+	if [ -n "$chart" ] && [ "$height" -ge 24 ]; then
+		news=$(tmux split-window -v -l $((height * 45 / 100)) -P -F '#{pane_id}' -t "$chart" "$run $widget_dir/newsboat" 2>/dev/null)
+	fi
 	if [ -n "$news" ] && [ "$width" -ge 150 ]; then
-		tmux split-window -h -l 46 -t "$news" "$run $widget_dir/img2txt" >/dev/null 2>&1
+		tmux split-window -h -l 44 -t "$news" "$run $widget_dir/img2txt" >/dev/null 2>&1
 	fi
 	# Open the first feed, so the reader shows headlines instead of a feed list
 	[ -n "$news" ] && sleep 3 && tmux send-keys -t "$news" Enter >/dev/null 2>&1

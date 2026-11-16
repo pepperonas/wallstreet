@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+# wallstreet widget: price chart of the stock selected in the quote table
+#
+# Part of wallstreet.  Copyright 2014-2026 Dustin Kirkland
+# <dustin.kirkland@gmail.com>, macOS port and data sources 2026.
+# Licensed under the Apache License, Version 2.0; see LICENSE.
+
+PKG=wallstreet
+WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
+# Ctrl-C in any pane ends the show: close the window all widgets live in
+quit() {
+	[ -n "$TMUX_PANE" ] && tmux kill-window -t "$TMUX_PANE" >/dev/null 2>&1
+	exit 0
+}
+trap quit INT QUIT TERM
+
+# 1-4, the arrow keys or a click change the span: day, month, quarter, year
+while true; do
+	"$WSDATA" chart || sleep 2
+done

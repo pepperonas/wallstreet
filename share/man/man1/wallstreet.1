@@ -14,9 +14,11 @@ wallstreet \- fill your console with wallstreet melodrama technobabble
 
 This utility will fill your console with Wall Street technobabble.
 
-It splits a \fBtmux\fP(1) (or \fBbyobu\fP(1)) window into panes of news and statistics, like any good computer screen on Wall Street: a table of the most active stocks, three scrolling tickers (gainers, losers, headlines), a feed reader and news pictures as ASCII art.
+It splits a \fBtmux\fP(1) (or \fBbyobu\fP(1)) window into panes of news and statistics, like any good computer screen on Wall Street: a table of the most active stocks, the chart of the selected one, three scrolling tickers (gainers, losers, headlines), a feed reader and news pictures as ASCII art.
 
 The data is real.  Quotes come from the Nasdaq market movers API, headlines and pictures from the RSS feeds listed in \fIshare/wallstreet/newsboat.urls\fP.  Results are cached for a short time in a private cache directory (\fI~/Library/Caches/wallstreet\fP on macOS, \fI~/.cache/wallstreet\fP elsewhere).
+
+Click a row of the quote table, or move with the arrow keys, j/k or the mouse wheel, to select a stock; the chart pane shows its course.  The keys 1 to 4, the arrow keys or a click on the chart change the span: day, month, three months, year.  Clicks need the mouse support of \fBtmux\fP(1), which \fBwallstreet\fP switches on in a session it creates itself.
 
 To quit, press Ctrl-C in any pane.
 

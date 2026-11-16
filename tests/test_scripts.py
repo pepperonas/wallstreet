@@ -28,7 +28,7 @@ class Scripts(unittest.TestCase):
 
     def test_the_expected_widgets_exist(self):
         self.assertEqual([w.name for w in WIDGETS],
-                         ["headlines", "img2txt", "jp2a", "newsboat", "quotes", "ticker"])
+                         ["chart", "headlines", "img2txt", "jp2a", "newsboat", "quotes", "ticker"])
 
     def test_launcher_starts_only_widgets_that_exist(self):
         used = set(re.findall(r"\$widget_dir/([a-z0-9]+)", code(ROOT / "bin/wallstreet")))
@@ -68,6 +68,16 @@ class Scripts(unittest.TestCase):
     def test_session_is_only_killed_when_owned(self):
         src = code(ROOT / "bin/wallstreet")
         self.assertRegex(src, r'\[ -n "\$WALLSTREET_OWN_SESSION" \] && tmux kill-session')
+
+    def test_mouse_is_switched_on_only_in_an_own_session(self):
+        # "mouse" is a session option: in somebody else's session it is theirs to set
+        src = code(ROOT / "bin/wallstreet")
+        self.assertRegex(src, r'\[ -n "\$WALLSTREET_OWN_SESSION" \] && tmux set-option -t \$PKG mouse on')
+        self.assertEqual(src.count("mouse on"), 1)
+
+    def test_quotes_and_chart_run_the_interactive_commands(self):
+        self.assertIn('"$WSDATA" browse', code(ROOT / "lib/wallstreet/quotes"))
+        self.assertIn('"$WSDATA" chart', code(ROOT / "lib/wallstreet/chart"))
 
     def test_data_helper_is_executable(self):
         self.assertTrue(os.access(ROOT / "share/wallstreet/wsdata", os.X_OK))

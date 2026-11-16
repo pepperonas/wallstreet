@@ -7,6 +7,27 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-17
+
+### Added
+- **The quote table is interactive.** Click a row - or move with the arrow keys, `j`/`k`
+  or the mouse wheel - and the stock is selected.
+- **A chart pane** beside the table shows the course of the selected stock, drawn with
+  braille characters: today's trading by the minute, or one month, three months or a year
+  of daily closes. `1`-`4`, the arrow keys or a click on the chart change the span. The
+  course comes from the same Nasdaq interface as the quotes; in demo mode it is invented
+  and ends at the quote in the table.
+- The selection is remembered between runs.
+
+### Changed
+- **Layout:** the chart sits beside the quote table, above the feed reader and the
+  picture. From 110 columns there is a chart and a feed reader, from 150 the picture too.
+- wallstreet switches on tmux's mouse support in the session it creates, so clicks reach
+  the table. A session you started yourself keeps its own setting; the keys work either way.
+- The tickers show every symbol once and only the direction they stand for. The demo list
+  of advancers could hold falling stocks, and symbols that are also Nasdaq-100 movers ran
+  through a ticker twice.
+
 ## [1.0.0] - 2026-11-16
 
 First release as a project of its own. It is based on `wallstreet` from

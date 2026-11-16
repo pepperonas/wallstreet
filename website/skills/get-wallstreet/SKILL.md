@@ -6,7 +6,7 @@ license: Apache-2.0
 
 # Get wallstreet
 
-wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.
+wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, the chart of the stock you click, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes and charts come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.
 
 ## 1. Find the newest release
 
@@ -29,13 +29,13 @@ page itself, browsers with WebMCP expose the same data as the tools `get_latest_
 ## 4. Install
 
 1. With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, `curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh` puts it into `~/.local` and names what is missing.
-2. Type `wallstreet` in a terminal — the wider the window, the more panes. `wallstreet --demo` shows invented data instead of the day's news.
+2. Type `wallstreet` in a terminal — the wider the window, the more panes. Click a stock to see its chart. `wallstreet --demo` shows invented data instead of the day's news.
 3. Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.
 
 ## Limits
 
 - wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.
-- The quotes are the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols and no history.
+- The table shows the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols. Charts go back one year at most.
 - The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.
 - It needs tmux and Python 3.9 or newer; there is no Windows version.
 - Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done.
