@@ -127,7 +127,8 @@ wallstreet --version
 | quote table | click on a row | select that stock |
 | quote table | `↑` `↓`, `j` `k`, mouse wheel | move the selection |
 | quote table or chart | `1` `2` `3` `4` | span of the chart: day, month, three months, year |
-| chart | click, `→` `←` | next or previous span |
+| chart | click on `1D` `1M` `3M` `1Y` | open that span |
+| chart | click elsewhere, `→` `←` | next or previous span |
 | any pane | `Ctrl-C` | quit |
 
 Clicks need tmux's mouse support. Started from a plain terminal, wallstreet creates a tmux

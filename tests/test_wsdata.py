@@ -457,6 +457,49 @@ class Chart(Base):
         self.assertIn("\x1b[7m 3M \x1b[27m", tabs)
         self.assertEqual(tabs.count("\x1b[7m"), 1)
 
+    def tab_cells(self, line):
+        """Per span the 1-based columns its label occupies in a rendered tab line."""
+        plain = ANSI.sub("", line)
+        return {key: range(plain.index(label) + 1, plain.index(label) + 1 + len(label))
+                for key, label, _ in self.ws.SPANS}
+
+    def test_a_click_on_a_tab_names_that_span(self):
+        # measured on what is drawn, so the click map cannot drift from the picture
+        line = self.ws.chart_lines(self.ws.history("NRDL", "1d"), "1d", 80, 20)[self.ws.TAB_ROW - 1]
+        for key, cells in self.tab_cells(line).items():
+            for x in cells:
+                self.assertEqual(self.ws.tab_at(x, self.ws.TAB_ROW), key, (key, x))
+
+    def test_the_click_area_is_exactly_the_marked_tab(self):
+        # the highlighted block is what the eye takes for the button: every cell of
+        # it must open the span, the cells left and right of it must not
+        data = self.ws.history("NRDL", "1d")
+        for key, _, _ in self.ws.SPANS:
+            line = self.ws.chart_lines(data, key, 80, 20)[self.ws.TAB_ROW - 1]
+            start = len(ANSI.sub("", line[:line.index("\x1b[7m")])) + 1
+            block = line[line.index("\x1b[7m") + 4:line.index("\x1b[27m")]
+            cells = range(start, start + len(block))
+            self.assertEqual([self.ws.tab_at(x, self.ws.TAB_ROW) for x in cells], [key] * len(block), key)
+            self.assertNotEqual(self.ws.tab_at(cells[-1] + 1, self.ws.TAB_ROW), key)
+            if start > 1:
+                self.assertNotEqual(self.ws.tab_at(start - 1, self.ws.TAB_ROW), key)
+
+    def test_a_click_beside_the_tabs_names_none(self):
+        line = self.ws.chart_lines(self.ws.history("NRDL", "1d"), "1d", 80, 20)[self.ws.TAB_ROW - 1]
+        on_a_tab = {x for cells in self.tab_cells(line).values() for x in cells}
+        gaps = [x for x in range(1, 80) if self.ws.tab_at(x, self.ws.TAB_ROW) is None]
+        self.assertFalse(on_a_tab & set(gaps))
+        self.assertIn(5, gaps)             # between 1D and 1M
+        self.assertIn(40, gaps)            # right of the last tab
+        for y in (1, 2, 4, 10):
+            self.assertIsNone(self.ws.tab_at(2, y))
+
+    def test_the_tabs_sit_on_the_same_line_with_and_without_data(self):
+        with_data = self.ws.chart_lines(self.ws.history("NRDL", "1d"), "1d", 80, 20)
+        without = self.ws.chart_lines(None, "1d", 80, 20)
+        for out in (with_data, without):
+            self.assertIn("1D", ANSI.sub("", out[self.ws.TAB_ROW - 1]))
+
     def test_without_data_it_says_what_to_do(self):
         text = "\n".join(self.ws.chart_lines(None, "1d", 80, 20))
         self.assertIn("Select a stock", text)

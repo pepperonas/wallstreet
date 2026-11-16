@@ -482,15 +482,30 @@ def price(value):
     return "%.2f" % value if abs(value) < 100000 else "%.0f" % value
 
 
+TAB_ROW = 3            # the line of the chart pane that holds the span tabs, 1-based
+TAB_WIDTH, TAB_GAP = 4, 2
+
+
+def tab_at(x, y):
+    """The span whose tab is at cell (x, y) of the chart pane, or None."""
+    if y != TAB_ROW or x < 1:
+        return None
+    index, offset = divmod(x - 1, TAB_WIDTH + TAB_GAP)
+    if index < len(SPANS) and offset < TAB_WIDTH:
+        return SPANS[index][0]
+    return None
+
+
 def chart_lines(data, span, cols, lines):
     """The chart pane as a list of at most LINES strings no wider than COLS - 1."""
     width = max(20, cols - 1)
-    tabs = "  ".join(("\033[7m %s \033[27m" if key == span else " %s ") % label
-                     for key, label, _ in SPANS)
+    tabs = (" " * TAB_GAP).join(("\033[7m %s \033[27m" if key == span else " %s ") % label
+                                for key, label, _ in SPANS)
     out = []
     if not data:
         symbol = read_selection()[0]
         out.append("\033[1;34m%s\033[0m" % symbol if symbol else "\033[1;33mCHART\033[0m")
+        out.append("")                     # keeps the tabs on TAB_ROW, where a click looks for them
         out.append("\033[90m%s\033[0m" % tabs)
         out.append("")
         out.append("\033[33m%s\033[0m" % (
@@ -703,6 +718,8 @@ def cmd_chart():
                 keys = [k for k, _, _ in SPANS]
                 if event[0] == "key" and event[1] in "1234":
                     write_selection(span=keys[int(event[1]) - 1])
+                elif event[0] == "click" and tab_at(event[1], event[2]):
+                    write_selection(span=tab_at(event[1], event[2]))      # a click on a tab opens it
                 elif event[0] == "click" or event in (("key", "right"), ("key", "enter"), ("key", " ")):
                     write_selection(span=keys[(keys.index(selection[1]) + 1) % len(keys)])
                 elif event == ("key", "left"):

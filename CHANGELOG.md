@@ -7,6 +7,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-17
+
+### Changed
+- **A click on `1D`, `1M`, `3M` or `1Y` opens that span.** Until now every click in the
+  chart pane went on to the next span, wherever it landed. A click elsewhere in the pane
+  still does that.
+
 ## [1.1.0] - 2026-11-17
 
 ### Added
