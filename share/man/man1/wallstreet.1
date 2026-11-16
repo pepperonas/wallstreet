@@ -1,0 +1,26 @@
+.TH wallstreet 1 "16 November 2026" wallstreet "wallstreet"
+.SH NAME
+wallstreet \- fill your console with wallstreet melodrama technobabble
+
+.SH SYNOPSIS
+\fBwallstreet\fP
+
+.SH DESCRIPTION
+
+This utility will fill your console with Wall Street technobabble.
+
+It splits a \fBtmux\fP(1) (or \fBbyobu\fP(1)) window into panes of news and statistics, like any good computer screen on Wall Street: a table of the most active stocks, three scrolling tickers (gainers, losers, headlines), a feed reader and news pictures as ASCII art.
+
+The data is real.  Quotes come from the Nasdaq market movers API, headlines and pictures from the RSS feeds listed in \fIshare/wallstreet/newsboat.urls\fP.  Results are cached for a short time in the temporary directory.
+
+To quit, press Ctrl-C in any pane.
+
+.SH SEE ALSO
+\fBtmux\fP(1), \fBbyobu\fP(1), \fBnewsboat\fP(1)
+
+.SH AUTHOR
+The macOS port and the current data sources were added in 2026.
+
+This manpage and the utility were written by Dustin Kirkland <dustin.kirkland@gmail.com> for Ubuntu systems (but may be used by others).  Permission is granted to copy, distribute and/or modify this document and the utility under the terms of the Apache2 License.
+
+The complete text of the Apache2 License can be found in \fI/usr/share/common-licenses/Apache-2.0\fP on Debian/Ubuntu systems.

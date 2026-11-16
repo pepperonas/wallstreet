@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+# wallstreet widget: scrolling line of gainers (+), losers (-) or headlines
+#
+# Part of wallstreet.  Copyright 2014-2026 Dustin Kirkland
+# <dustin.kirkland@gmail.com>, macOS port and data sources 2026.
+# Licensed under the Apache License, Version 2.0; see LICENSE.
+
+PKG=wallstreet
+WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
+trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
+
+while true; do
+	case "$1" in
+		+) color=green;  delay=0.12; text=$("$WSDATA" movers up) ;;
+		-) color=red;    delay=0.14; text=$("$WSDATA" movers down) ;;
+		*) color=yellow; delay=0.08
+		   text=$("$WSDATA" headlines | sort -R | head -n 40 | sed -e 's/$/ ... /' | tr -d '\n') ;;
+	esac
+	if [ -z "$text" ]; then
+		printf '\rwaiting for data ...'
+		sleep 10
+		continue
+	fi
+	"$WSDATA" marquee "$color" "$delay" "$text" || sleep 10
+done

@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# wallstreet widget: table of the most active stocks and the biggest movers
+#
+# Part of wallstreet.  Copyright 2014-2026 Dustin Kirkland
+# <dustin.kirkland@gmail.com>, macOS port and data sources 2026.
+# Licensed under the Apache License, Version 2.0; see LICENSE.
+
+PKG=wallstreet
+WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
+trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
+
+while true; do
+	out=$("$WSDATA" table)
+	clear
+	printf '%s\n' "$out"
+	sleep 60
+done

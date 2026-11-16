@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# wallstreet widget: news headlines, one after the other
+#
+# Part of wallstreet.  Copyright 2014-2026 Dustin Kirkland
+# <dustin.kirkland@gmail.com>, macOS port and data sources 2026.
+# Licensed under the Apache License, Version 2.0; see LICENSE.
+
+PKG=wallstreet
+WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
+trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
+
+printf '\033[38;5;226m'
+while true; do
+	"$WSDATA" headlines | sort -R | while IFS= read -r line; do
+		printf '%s  %s\n' "$(date +%H:%M)" "$line"
+		sleep 2
+	done
+	sleep 5
+done
