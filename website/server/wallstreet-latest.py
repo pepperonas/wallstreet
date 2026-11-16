@@ -51,13 +51,6 @@ CONFIG = json.loads(r'''{
    "short": "macOS · Linux",
    "asset": "^wallstreet\\.tar\\.gz$",
    "requirement": "macOS or Linux · tmux"
-  },
-  {
-   "id": "installer",
-   "label": "Installer script (install.sh)",
-   "short": "install.sh",
-   "asset": "^install\\.sh$",
-   "requirement": "sh · curl · verifies the SHA-256"
   }
  ]
 }''')
@@ -274,6 +267,9 @@ def fetch_stats():
 
 
 def mb(size):
+    # small files (a script, a 30 KB archive) would all read "0.0 MB"
+    if size < 104858:
+        return f"{max(1, round(size / 1024))} KB"
     return f"{size / 1048576:.1f} MB"
 
 

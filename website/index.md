@@ -10,7 +10,7 @@ This is the Markdown version of https://wallstreet.celox.io/ for agents and text
 - **Newest release:** https://wallstreet.celox.io/download (picks the file for your platform; always the current release)
 - **Current version:** <!--# include virtual="/ssi/version.txt" stub="none" --> · released <!--# include virtual="/ssi/date.txt" stub="none" -->
 - **Release data as JSON:** https://wallstreet.celox.io/latest.json
-- **Requirements:** macOS · Linux: macOS or Linux · tmux; install.sh: sh · curl · verifies the SHA-256
+- **Requirements:** macOS · Linux: macOS or Linux · tmux
 
 Files in the current release:
 
@@ -34,7 +34,7 @@ Files in the current release:
 
 ## Install
 
-1. **Install** — With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into `~/.local` and names what is missing.
+1. **Install** — With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, `curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh` puts it into `~/.local` and names what is missing.
 2. **Run** — Type `wallstreet` in a terminal — the wider the window, the more panes. `wallstreet --demo` shows invented data instead of the day's news.
 3. **Quit** — Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.
 

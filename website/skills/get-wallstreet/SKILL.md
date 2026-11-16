@@ -19,7 +19,6 @@ page itself, browsers with WebMCP expose the same data as the tools `get_latest_
 
 - Stable link, always the newest file for the visitor's platform: <https://wallstreet.celox.io/download>
 - macOS · Linux: <https://wallstreet.celox.io/download/unix> — macOS or Linux · tmux
-- install.sh: <https://wallstreet.celox.io/download/installer> — sh · curl · verifies the SHA-256
 
 ## 3. Verify
 
@@ -29,7 +28,7 @@ page itself, browsers with WebMCP expose the same data as the tools `get_latest_
 
 ## 4. Install
 
-1. With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into `~/.local` and names what is missing.
+1. With Homebrew: `brew install pepperonas/tap/wallstreet` brings wallstreet and the programs its panes use. Without Homebrew, `curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh` puts it into `~/.local` and names what is missing.
 2. Type `wallstreet` in a terminal — the wider the window, the more panes. `wallstreet --demo` shows invented data instead of the day's news.
 3. Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.
 

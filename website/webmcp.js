@@ -14,8 +14,7 @@
     "name": "wallstreet",
     "summary": "wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.",
     "requirements": {
-      "unix": "macOS or Linux · tmux",
-      "installer": "sh · curl · verifies the SHA-256"
+      "unix": "macOS or Linux · tmux"
     },
     "platforms": [
       "macOS",
@@ -42,8 +41,7 @@
       "Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done."
     ],
     "targets": [
-      "unix",
-      "installer"
+      "unix"
     ],
     "signing": [],
     "links": {
@@ -93,7 +91,7 @@
     },
     {
       name: 'get_download_url',
-      description: 'The direct download URL of the newest wallstreet file for a platform (unix, installer), plus ' +
+      description: 'The direct download URL of the newest wallstreet file for a platform (unix), plus ' +
         'the stable link that always redirects to the newest file.',
       inputSchema: {
         type: 'object',

@@ -127,6 +127,8 @@
   // ---- latest release (written next to this page by a server-side timer; no third-party call)
   // latest.json: { version, published, notes, assets: [{ target, label, requirement, name, url, size, sha256 }] }
   function mb(bytes) {
+    // small files (a script, a 30 KB archive) would all read "0.0 MB"
+    if (bytes < 104858) return Math.max(1, Math.round(bytes / 1024)) + ' KB';
     try { return (bytes / 1048576).toLocaleString(current, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MB'; }
     catch (e) { return (bytes / 1048576).toFixed(1) + ' MB'; }
   }

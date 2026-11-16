@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 1,
+ "asset_version": 2,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -64,27 +64,6 @@
     "es": "macOS · Linux",
     "it": "macOS · Linux",
     "fr": "macOS · Linux"
-   }
-  },
-  {
-   "id": "installer",
-   "label": "Installer script (install.sh)",
-   "short": "install.sh",
-   "asset": "^install\\.sh$",
-   "requirement": "sh · curl · verifies the SHA-256",
-   "i18n": {
-    "en": "Installer script (install.sh)",
-    "de": "Installationsskript (install.sh)",
-    "es": "Script de instalación (install.sh)",
-    "it": "Script di installazione (install.sh)",
-    "fr": "Script d'installation (install.sh)"
-   },
-   "i18n_short": {
-    "en": "install.sh",
-    "de": "install.sh",
-    "es": "install.sh",
-    "it": "install.sh",
-    "fr": "install.sh"
    }
   }
  ],
@@ -379,11 +358,11 @@
      "fr": "Installer"
     },
     "p": {
-     "en": "With Homebrew: <code>brew install pepperonas/tap/wallstreet</code> brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into <code>~/.local</code> and names what is missing.",
-     "de": "Mit Homebrew: <code>brew install pepperonas/tap/wallstreet</code> bringt wallstreet und die Programme mit, die seine Fenster brauchen. Ohne Homebrew legt das Installationsskript aus dem Download es nach <code>~/.local</code> und nennt, was fehlt.",
-     "es": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> trae wallstreet y los programas que usan sus paneles. Sin Homebrew, el script de instalación de la descarga lo coloca en <code>~/.local</code> e indica lo que falta.",
-     "it": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> porta wallstreet e i programmi usati dai suoi riquadri. Senza Homebrew, lo script di installazione del download lo mette in <code>~/.local</code> e indica cosa manca.",
-     "fr": "Avec Homebrew : <code>brew install pepperonas/tap/wallstreet</code> installe wallstreet et les programmes dont ses panneaux ont besoin. Sans Homebrew, le script d'installation du téléchargement le place dans <code>~/.local</code> et indique ce qui manque."
+     "en": "With Homebrew: <code>brew install pepperonas/tap/wallstreet</code> brings wallstreet and the programs its panes use. Without Homebrew, <code>curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh</code> puts it into <code>~/.local</code> and names what is missing.",
+     "de": "Mit Homebrew: <code>brew install pepperonas/tap/wallstreet</code> bringt wallstreet und die Programme mit, die seine Fenster brauchen. Ohne Homebrew legt <code>curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh</code> es nach <code>~/.local</code> und nennt, was fehlt.",
+     "es": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> trae wallstreet y los programas que usan sus paneles. Sin Homebrew, <code>curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh</code> lo coloca en <code>~/.local</code> e indica lo que falta.",
+     "it": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> porta wallstreet e i programmi usati dai suoi riquadri. Senza Homebrew, <code>curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh</code> lo mette in <code>~/.local</code> e indica cosa manca.",
+     "fr": "Avec Homebrew : <code>brew install pepperonas/tap/wallstreet</code> installe wallstreet et les programmes dont ses panneaux ont besoin. Sans Homebrew, <code>curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/install.sh | sh</code> le place dans <code>~/.local</code> et indique ce qui manque."
     }
    },
    {
