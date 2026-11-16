@@ -103,8 +103,8 @@ def demo_movers():
                                             for r in rs]}}
     return {"MostActiveByDollarVolume": table(rows_[:10]),
             "Nasdaq100Movers": table(rows_[10:18]),
-            "MostAdvanced": table(by[::-1][:8]),
-            "MostDeclined": table(by[:8])}
+            "MostAdvanced": table([r for r in by[::-1] if r["_pct"] > 0][:8]),
+            "MostDeclined": table([r for r in by if r["_pct"] < 0][:8])}
 
 
 def term_size():
@@ -313,19 +313,24 @@ def cmd_table():
     print("\n".join(out).rstrip("\n"))
 
 
+def percent(row):
+    """The row's change in percent as a number, or None."""
+    try:
+        return float(row.get("change", "").replace("%", "").replace(",", ""))
+    except ValueError:
+        return None
+
+
 def cmd_movers(direction):
-    data = rows("MostAdvanced" if direction == "up" else "MostDeclined")
-    data = data + [r for r in rows("Nasdaq100Movers")
-                   if (r.get("deltaIndicator") == "up") == (direction == "up")]
-    parts = []
-    for r in data:
-        pct = r.get("change", "")
-        try:
-            pct = "%+.2f%%" % float(pct.replace("%", "").replace(",", ""))
-        except ValueError:
-            pass
-        parts.append("%s %s %s" % (r.get("symbol", ""),
-                                   r.get("lastSalePrice", "").lstrip("$"), pct))
+    """One line of gainers or losers: every symbol once, only the asked direction."""
+    up = direction == "up"
+    parts, seen = [], set()
+    for r in rows("MostAdvanced" if up else "MostDeclined") + rows("Nasdaq100Movers"):
+        pct, sym = percent(r), r.get("symbol", "")
+        if pct is None or pct == 0 or (pct > 0) != up or sym in seen:
+            continue
+        seen.add(sym)
+        parts.append("%s %s %+.2f%%" % (sym, r.get("lastSalePrice", "").lstrip("$"), pct))
     print(" ... ".join(parts))
 
 

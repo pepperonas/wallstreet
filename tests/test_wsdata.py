@@ -161,8 +161,9 @@ class Cached(Base):
 class Demo(Base):
     def test_every_section_has_rows(self):
         data = self.ws.movers()
-        for key in ("MostActiveByDollarVolume", "Nasdaq100Movers", "MostAdvanced", "MostDeclined"):
-            self.assertGreaterEqual(len(data[key]["table"]["rows"]), 8, key)
+        for key, least in (("MostActiveByDollarVolume", 8), ("Nasdaq100Movers", 8),
+                           ("MostAdvanced", 1), ("MostDeclined", 1)):
+            self.assertGreaterEqual(len(data[key]["table"]["rows"]), least, key)
 
     def test_two_reads_in_one_minute_agree(self):
         with mock.patch.object(self.ws.time, "time", return_value=1_800_000_000.0):
@@ -182,15 +183,34 @@ class Demo(Base):
             out_of(self.ws.cmd_movers, "up")
             out_of(self.ws.cmd_image)
 
+    def movers_at(self, minute, direction):
+        with mock.patch.object(self.ws.time, "time", return_value=1_800_000_000.0 + 60 * minute):
+            return out_of(self.ws.cmd_movers, direction).strip()
+
     def test_gainers_are_all_up(self):
-        line = out_of(self.ws.cmd_movers, "up")
-        self.assertTrue(line.strip())
-        self.assertNotIn(" -", line)
+        # the demo quotes change every minute: one minute proves nothing
+        for minute in range(200):
+            line = self.movers_at(minute, "up")
+            self.assertNotIn(" -", line, minute)
 
     def test_losers_are_all_down(self):
-        line = out_of(self.ws.cmd_movers, "down")
-        self.assertTrue(line.strip())
-        self.assertNotIn(" +", line)
+        for minute in range(200):
+            line = self.movers_at(minute, "down")
+            self.assertNotIn(" +", line, minute)
+
+    def test_no_symbol_runs_twice_in_a_ticker(self):
+        for minute in range(200):
+            for direction in ("up", "down"):
+                symbols = [part.split()[0] for part in self.movers_at(minute, direction).split(" ... ") if part]
+                self.assertEqual(len(symbols), len(set(symbols)), (minute, symbols))
+
+    def test_a_flat_or_unreadable_change_is_left_out(self):
+        fake = {"MostAdvanced": {"table": {"rows": [
+            {"symbol": "AAA", "lastSalePrice": "$1", "change": "+2%"},
+            {"symbol": "BBB", "lastSalePrice": "$1", "change": "unch"},
+            {"symbol": "CCC", "lastSalePrice": "$1", "change": "0.00%"}]}}}
+        with mock.patch.object(self.ws, "movers", return_value=fake):
+            self.assertEqual(out_of(self.ws.cmd_movers, "up").strip(), "AAA 1 +2.00%")
 
     def test_headlines_are_unique(self):
         lines = out_of(self.ws.cmd_headlines).splitlines()
