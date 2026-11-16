@@ -1,0 +1,68 @@
+name: release
+
+# A pushed tag vX.Y.Z becomes a GitHub release with everything a user can download:
+#
+#   wallstreet.tar.gz    the program (bin, lib, share), no build step needed
+#   install.sh          downloads that archive, verifies it, installs it
+#   SHA256SUMS          of both
+#
+# The asset names carry NO version, so .../releases/latest/download/<name> always
+# points at the newest one - that is what the README, install.sh and the project
+# page link to. tests/ pins the names.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)publish, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: The tag is the version the sources carry
+        run: test "v$(cat VERSION)" = "$TAG" || { echo "tag $TAG, but VERSION says $(cat VERSION)"; exit 1; }
+
+      - name: Tests
+        run: python3 -m unittest discover -s tests
+
+      - name: Build the assets
+        run: |
+          mkdir assets
+          git archive --format=tar.gz --prefix="wallstreet-${TAG#v}/" -o assets/wallstreet.tar.gz "$TAG"
+          cp install.sh assets/
+          (cd assets && sha256sum wallstreet.tar.gz install.sh > SHA256SUMS && cat SHA256SUMS)
+          python3 tools/release_notes.py "$TAG" > notes.md
+
+      - name: The archive starts
+        run: |
+          tar -xzf assets/wallstreet.tar.gz
+          bash -n "wallstreet-${TAG#v}/bin/wallstreet"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+            gh release edit "$TAG" --notes-file notes.md --latest
+          else
+            gh release create "$TAG" assets/* --title "wallstreet ${TAG#v}" --notes-file notes.md --latest
+          fi

@@ -1,10 +1,13 @@
+# Homebrew formula.  The copy that brew installs lives in the tap
+# (github.com/pepperonas/homebrew-tap); tools/tap-formula.sh writes it from
+# this file and the checksum of the release.
 class Wallstreet < Formula
   desc "Fill your console with Wall Street-like news and stats"
-  homepage "https://github.com/dustinkirkland/hollywood"
-  url "file:///Users/martin/claude/wallstreet", using: :git, branch: "main", revision: "64e21e476d6e41b3fa94879106c766a03f4a57b4"
-  version "1.27"
+  homepage "https://wallstreet.celox.io"
+  url "https://github.com/pepperonas/wallstreet/releases/download/v1.0.0/wallstreet.tar.gz"
+  version "1.0.0"
+  sha256 "SHA256_OF_THE_RELEASE_ARCHIVE"
   license "Apache-2.0"
-  head "file:///Users/martin/claude/wallstreet", using: :git, branch: "main"
 
   depends_on "jp2a"
   depends_on "libcaca"
@@ -20,7 +23,8 @@ class Wallstreet < Formula
   end
 
   test do
-    system "bash", "-n", bin/"wallstreet"
-    assert_match "usage", shell_output("#{share}/wallstreet/wsdata 2>&1", 2).downcase
+    assert_match "wallstreet #{version}", shell_output("#{bin}/wallstreet --version")
+    ENV["WALLSTREET_DEMO"] = "1"
+    assert_match "MOST ACTIVE", shell_output("#{share}/wallstreet/wsdata table")
   end
 end

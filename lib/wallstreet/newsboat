@@ -7,12 +7,23 @@
 
 PKG=wallstreet
 WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
-trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
+# Ctrl-C in any pane ends the show: close the window all widgets live in
+quit() {
+	[ -n "$TMUX_PANE" ] && tmux kill-window -t "$TMUX_PANE" >/dev/null 2>&1
+	exit 0
+}
+trap quit INT QUIT TERM
 
 command -v newsboat >/dev/null 2>&1 || exit 1
 dir="$(dirname "$0")/../../share/$PKG"
 cache=$("$WSDATA" cachedir) || exit 1
+urls="$dir/newsboat.urls"
+db="$cache/cache.db"
+if [ "$WALLSTREET_DEMO" = "1" ]; then
+	urls=$("$WSDATA" demofeed) || exit 1
+	db="$cache/demo.db"
+fi
 while true; do
-	newsboat -r -C "$dir"/newsboat.config -u "$dir"/newsboat.urls -c "$cache/cache.db"
+	newsboat -r -C "$dir"/newsboat.config -u "$urls" -c "$db"
 	sleep 1
 done

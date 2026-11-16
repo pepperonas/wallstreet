@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Version badge and test count are current
+        run: python3 tools/badges.py --check
+
+      - name: The release archive holds the program and nothing else
+        run: |
+          git archive --format=tar --prefix=wallstreet/ HEAD | tar -tf - > files.txt
+          grep -q '^wallstreet/bin/wallstreet$' files.txt
+          grep -q '^wallstreet/LICENSE$' files.txt
+          ! grep -qE '^wallstreet/(tests|tools|website|docs|\.github)/' files.txt

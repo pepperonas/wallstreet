@@ -1,0 +1,40 @@
+name: badges
+
+# Keeps the three headline README badges (version, lines of code, unit tests) honest
+# without anyone having to remember to update them. Runs after a push to main,
+# regenerates .github/badges/*.json, and commits only when a number actually moved.
+#
+# The commit message carries [skip ci] so this workflow cannot retrigger itself.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: badges-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Regenerate the badge payloads
+        run: python3 tools/badges.py
+
+      - name: Commit if anything moved
+        run: |
+          if git diff --quiet -- .github/badges; then
+            echo "badges unchanged"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges
+          git commit -m "chore: refresh badge counters [skip ci]"
+          git push

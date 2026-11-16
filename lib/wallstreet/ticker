@@ -7,7 +7,12 @@
 
 PKG=wallstreet
 WSDATA="$(dirname "$0")/../../share/$PKG/wsdata"
-trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
+# Ctrl-C in any pane ends the show: close the window all widgets live in
+quit() {
+	[ -n "$TMUX_PANE" ] && tmux kill-window -t "$TMUX_PANE" >/dev/null 2>&1
+	exit 0
+}
+trap quit INT QUIT TERM
 
 while true; do
 	case "$1" in

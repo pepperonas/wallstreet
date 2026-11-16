@@ -1,0 +1,10 @@
+# The release archive (git archive) carries the program only
+/.github        export-ignore
+/.gitattributes export-ignore
+/.gitignore     export-ignore
+/CLAUDE.md      export-ignore
+/docs           export-ignore
+/packaging      export-ignore
+/tests          export-ignore
+/tools          export-ignore
+/website        export-ignore

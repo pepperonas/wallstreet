@@ -1,0 +1,17 @@
+wallstreet
+Copyright 2026 Martin Pfeffer
+
+This product is a modified version of wallstreet, which is part of hollywood
+(https://github.com/dustinkirkland/hollywood), version 1.27,
+Copyright 2014-2026 Dustin Kirkland <dustin.kirkland@gmail.com>,
+licensed under the Apache License, Version 2.0.
+
+Changes made to the original work, as required by section 4(b) of the licence:
+
+- share/wallstreet/wsdata (new): fetches, caches and renders all data.
+- lib/wallstreet/*: rewritten on top of wsdata; the widgets w3m, rsstail and breaks
+  were replaced by quotes and headlines.
+- bin/wallstreet: new layout, --demo, --version, widgets tracked by tmux window id,
+  session closed only if the script created it.
+- share/wallstreet/newsboat.urls: feeds that still publish.
+- Added: tests, release tooling, Homebrew formula, project page.

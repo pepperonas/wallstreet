@@ -18,11 +18,24 @@
 # limitations under the License.
 
 PKG="wallstreet"
+VERSION="1.0.0"
 widget_dir="$(cd "$(dirname "$0")/../lib/$PKG" && pwd)"
 
 case "$1" in
+	--demo)
+		# Invented quotes and headlines, nothing is fetched
+		export WALLSTREET_DEMO=1
+	;;
+	-V|--version)
+		echo "$PKG $VERSION"
+		exit 0
+	;;
 	-h|--help)
 		exec man $PKG
+	;;
+	?*)
+		echo "usage: $PKG [--demo] [--version]" >&2
+		exit 2
 	;;
 esac
 
@@ -35,7 +48,7 @@ if [ -z "$TMUX" ]; then
 		tmux_launcher=tmux
 	fi
 	$tmux_launcher new-session -d -s $PKG "bash"
-	$tmux_launcher send-keys -t $PKG "WALLSTREET_OWN_SESSION=1 $0; exit"
+	$tmux_launcher send-keys -t $PKG "WALLSTREET_OWN_SESSION=1 $0 $1; exit"
 	$tmux_launcher send-keys -t $PKG Enter
 	exec $tmux_launcher attach-session -t $PKG
 	exit 1
@@ -43,23 +56,33 @@ fi
 
 cleanup() {
 	trap - EXIT HUP INT QUIT TERM
-	pkill -9 -f "lib/$PKG/" >/dev/null 2>&1
+	[ -n "$win" ] && tmux kill-window -t "$win" >/dev/null 2>&1
 	# Only take the session down if this script created it
 	[ -n "$WALLSTREET_OWN_SESSION" ] && tmux kill-session -t $PKG >/dev/null 2>&1
 	exit 0
 }
 trap cleanup EXIT HUP INT QUIT TERM
 
-# Layout: quotes and the feed reader on top, three tickers and a picture below
-win=$(tmux new-window -P -F '#{window_id}' -n $PKG "$widget_dir/quotes") || exit 1
-tmux split-window -v -t $win.0 "$widget_dir/ticker +" \; \
-	split-window -v -t $win.1 "$widget_dir/ticker -" \; \
-	split-window -v -t $win.2 "$widget_dir/ticker topNews" \; \
-	split-window -h -t $win.0 "$widget_dir/newsboat" \; \
-	split-window -h -t $win.1 "$widget_dir/img2txt" \; \
-	send-keys -t $win.1 "Enter" \; \
-	resize-pane -t $win.0 -x 80 -y 999999 \
-	>/dev/null 2>&1
+# Panes take their environment from the tmux server, not from this script
+run="env WALLSTREET_DEMO=${WALLSTREET_DEMO:-0}"
+
+# Layout: the quote table, the feed reader and a news picture on top,
+# three tickers of three rows each below.  Narrow terminals get fewer panes.
+win=$(tmux new-window -P -F '#{window_id}' -n $PKG "$run $widget_dir/quotes") || exit 1
+quotes=$(tmux list-panes -t "$win" -F '#{pane_id}' | head -n1)
+width=$(tmux display-message -p -t "$win" '#{window_width}')
+tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker topNews" >/dev/null 2>&1
+tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker -" >/dev/null 2>&1
+tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker +" >/dev/null 2>&1
+if [ "$width" -ge 110 ]; then
+	news=$(tmux split-window -h -l $((width - 81)) -P -F '#{pane_id}' -t "$quotes" "$run $widget_dir/newsboat" 2>/dev/null)
+	if [ -n "$news" ] && [ "$width" -ge 150 ]; then
+		tmux split-window -h -l 46 -t "$news" "$run $widget_dir/img2txt" >/dev/null 2>&1
+	fi
+	# Open the first feed, so the reader shows headlines instead of a feed list
+	[ -n "$news" ] && sleep 3 && tmux send-keys -t "$news" Enter >/dev/null 2>&1
+fi
+tmux select-pane -t "$quotes" >/dev/null 2>&1
 
 # Stay around until the last widget is gone
 while tmux list-panes -t "$win" -F x 2>/dev/null | grep -q x; do

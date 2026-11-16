@@ -13,6 +13,11 @@
 #   wsdata headlines                 one headline per line
 #   wsdata image                     path of a random downloaded picture
 #   wsdata cachedir                  path of the private cache directory
+#   wsdata demofeed                  write the demo feed, print its urls file
+#
+# With WALLSTREET_DEMO=1 nothing is fetched: quotes, headlines and the picture
+# are invented (companies that do not exist), for screenshots, tests and
+# machines without a network.
 #   wsdata marquee COLOR DELAY TEXT  scroll TEXT once across the terminal
 #
 # Licensed under the Apache License, Version 2.0, like the rest of this
@@ -40,6 +45,76 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
 MOVERS_URL = "https://api.nasdaq.com/api/marketmovers?assetclass=stocks"
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAX_BYTES = 8 * 1024 * 1024
+DEMO = os.environ.get("WALLSTREET_DEMO") == "1"
+
+# Invented companies and headlines for the demo mode
+DEMO_STOCKS = [
+    ("NRDL", "Nordlicht Robotics AG", 184.20), ("HLXQ", "Helix Quantum Corp.", 412.75),
+    ("PXLF", "Pixelforge Studios", 63.18), ("VNTA", "Ventara Energy Holdings", 97.40),
+    ("ORBT", "Orbital Freight Systems", 251.06), ("KRYO", "Kryon Semiconductor", 733.90),
+    ("MSHL", "Marshland Foods Inc.", 41.52), ("TLLR", "Tiller & Rowe Insurance", 128.33),
+    ("SYNP", "Synapse Therapeutics", 19.87), ("BLKW", "Blackwater Shipping Co.", 76.05),
+    ("AURM", "Aurum Digital Bank", 302.44), ("FJRD", "Fjord Wind Power ASA", 55.61),
+    ("QNTM", "Quantum Lantern Labs", 8.42), ("GRVT", "Gravita Space Mining", 3.17),
+    ("CDRX", "Cedar Rx Pharmacies", 147.29), ("LMNR", "Luminar Glassworks", 88.76),
+    ("OTTR", "Otter Creek Software", 215.80), ("ZPHR", "Zephyr Airlines Group", 34.95),
+    ("MRDN", "Meridian Rail Corp.", 166.12), ("PLMN", "Palomino Payments", 271.38),
+]
+DEMO_HEADLINES = [
+    "Nordlicht Robotics opens second plant as warehouse orders double",
+    "Helix Quantum says its 400-qubit machine ran for a full day",
+    "Central bank holds rates, hints at a cut in spring",
+    "Kryon Semiconductor slides after cautious outlook for memory chips",
+    "Fjord Wind Power wins the largest offshore tender of the year",
+    "Aurum Digital Bank passes ten million customers",
+    "Orbital Freight books first profit since listing",
+    "Shipping rates ease as Blackwater adds six vessels",
+    "Marshland Foods recalls oat bars over labelling error",
+    "Zephyr Airlines orders forty regional jets",
+    "Palomino Payments to buy rival in all-share deal",
+    "Meridian Rail completes electrification of its northern line",
+    "Synapse Therapeutics jumps on trial results for migraine drug",
+    "Luminar Glassworks cuts energy use by a third with new furnace",
+    "Copper hits a two-year high on grid spending",
+    "Otter Creek Software raises full-year guidance",
+    "Tiller & Rowe sees storm claims below forecast",
+    "Cedar Rx to open two hundred pharmacies in rural towns",
+    "Gravita Space Mining delays probe launch to next quarter",
+    "Quantum Lantern Labs explores sale after funding round stalls",
+    "Ventara Energy to spin off its storage business",
+    "Pixelforge Studios sells four million copies in launch week",
+    "Retail sales rise for the fifth month in a row",
+    "Factory output steady as export orders recover",
+]
+
+
+def demo_movers():
+    """Invented quotes that drift a little every minute, same for all panes."""
+    rnd = random.Random(int(time.time() // 60))
+    rows_ = []
+    for sym, name, base in DEMO_STOCKS:
+        pct = rnd.gauss(0, 3.2)
+        last = base * (1 + pct / 100)
+        rows_.append({"symbol": sym, "name": name, "lastSalePrice": "$%.2f" % last,
+                      "lastSaleChange": "%+.2f" % (last - base), "change": "%+.2f%%" % pct,
+                      "deltaIndicator": "up" if pct >= 0 else "down", "_pct": pct})
+    by = sorted(rows_, key=lambda r: r["_pct"])
+    table = lambda rs: {"table": {"rows": [{k: v for k, v in r.items() if k != "_pct"}
+                                            for r in rs]}}
+    return {"MostActiveByDollarVolume": table(rows_[:10]),
+            "Nasdaq100Movers": table(rows_[10:18]),
+            "MostAdvanced": table(by[::-1][:8]),
+            "MostDeclined": table(by[:8])}
+
+
+def term_size():
+    """Size of the terminal, also when stdout is a pipe or a $(...) capture."""
+    for fd in (2, 0, 1):
+        try:
+            return os.get_terminal_size(fd)
+        except OSError:
+            continue
+    return shutil.get_terminal_size((80, 24))
 
 
 def cache_dir():
@@ -137,6 +212,8 @@ def cached(name, ttl, producer):
 
 
 def movers():
+    if DEMO:
+        return demo_movers()
     raw = cached("movers.json", 55, lambda: fetch(MOVERS_URL))
     try:
         return json.loads(raw)["data"]["STOCKS"]
@@ -167,6 +244,9 @@ def feed_urls():
 
 def feeds():
     """Parsed feeds as a list of (title, picture-url-or-None)."""
+    if DEMO:
+        return [[title, None] for title in DEMO_HEADLINES]
+
     def produce():
         items = []
         for url in feed_urls():
@@ -194,9 +274,9 @@ def feeds():
 
 
 def cmd_table():
-    cols = shutil.get_terminal_size((80, 24)).columns
+    cols = term_size().columns
     sections = (("MOST ACTIVE", "MostActiveByDollarVolume"),
-                ("NASDAQ-100 MOVERS", "Nasdaq100Movers"),
+                ("INDEX MOVERS" if DEMO else "NASDAQ-100 MOVERS", "Nasdaq100Movers"),
                 ("ADVANCERS", "MostAdvanced"),
                 ("DECLINERS", "MostDeclined"))
     out = []
@@ -225,8 +305,12 @@ def cmd_table():
     if not out:
         out = ["\033[33mNo market data available right now.\033[0m"]
     # Never print more than fits: the top of the table is what matters
-    lines = shutil.get_terminal_size((80, 24)).lines
-    print("\n".join(out[:max(3, lines - 1)]).rstrip("\n"))
+    lines = term_size().lines
+    out = out[:max(3, lines - 1)]
+    # A section that lost all its rows to the cut would be a bare heading
+    while len(out) > 3 and (out[-1] == "" or out[-1].startswith(("\033[90m", "\033[1;33m"))):
+        out.pop()
+    print("\n".join(out).rstrip("\n"))
 
 
 def cmd_movers(direction):
@@ -253,7 +337,34 @@ def cmd_headlines():
             print(title)
 
 
+def cmd_demofeed():
+    """A local RSS file of the invented headlines, for the feed reader."""
+    from xml.sax.saxutils import escape
+    now = time.time()
+    items = "".join(
+        "<item><title>%s</title><link>https://example.com/%d</link>"
+        "<guid>demo-%d</guid><pubDate>%s</pubDate>"
+        "<description>%s.</description></item>" % (
+            escape(t), i, i,
+            time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(now - i * 1740)),
+            escape(t))
+        for i, t in enumerate(DEMO_HEADLINES))
+    feed = os.path.join(CACHE, "demo-feed.xml")
+    with open(feed, "w", encoding="utf-8") as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel>'
+                "<title>Wall Street Wire (demo)</title><link>https://example.com/</link>"
+                "<description>Invented headlines</description>%s</channel></rss>" % items)
+    urls = os.path.join(CACHE, "demo.urls")
+    with open(urls, "w", encoding="utf-8") as f:
+        f.write("file://%s\n" % feed)
+    print(urls)
+    return 0
+
+
 def cmd_image():
+    if DEMO:
+        print(os.path.join(HERE, "demo.jpg"))
+        return 0
     pics = sorted({p for _, p in feeds() if p})
     random.shuffle(pics)
     for url in pics[:5]:
@@ -271,12 +382,12 @@ def cmd_marquee(color, delay, text):
         return 1
     code = COLORS.get(color, 37)
     delay = float(delay)
-    cols = max(10, shutil.get_terminal_size((80, 24)).columns - 1)
+    cols = max(10, term_size().columns - 1)
     band = " " * cols + text + " " * cols
     try:
         sys.stdout.write("\033[?25l")
         for i in range(len(band) - cols + 1):
-            cols_now = max(10, shutil.get_terminal_size((80, 24)).columns - 1)
+            cols_now = max(10, term_size().columns - 1)
             sys.stdout.write("\r\033[1;%dm%s\033[0m\033[K" % (
                 code, band[i:i + cols][:cols_now]))
             sys.stdout.flush()
@@ -296,6 +407,8 @@ def main(argv):
         return cmd_headlines()
     if cmd == "image":
         return cmd_image()
+    if cmd == "demofeed":
+        return cmd_demofeed()
     if cmd == "cachedir":
         print(CACHE)
         return 0
