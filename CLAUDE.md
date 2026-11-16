@@ -46,6 +46,20 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
 - A row of the table must not contain `ESC[0m` — it would end the highlight of the selected
   row after the first column (pinned). Use `ESC[39;22m`.
 
+## The chart's numbers (1.2.0)
+
+- The day is the **regular session** (9:30-16:00 New York; the API writes local time as if
+  it were UTC, `minute_of_day`). Pre-market is dropped, after-hours follows in grey
+  (`dim_from`). Before the bell there is only pre-market and it is shown.
+- The day's result comes from `/info`, never from the chart answer: after the close
+  `primaryData` is the after-hours trade and `secondaryData` the session; `previousClose`
+  of the chart answer is **not** yesterday's close (NVDA 2026-11-16: 166.19 vs 162.85).
+  Yesterday's close = session last - session change.
+- Longer spans compare with their first point. YTD starts on 1 January, so its base is the
+  first close of the year - that is what Google shows; the textbook base (last close of the
+  old year) gives another figure (TSLA: -15.56 % vs -13.32 %).
+- Compared by hand with Google Finance on 2026-11-16: NVDA day 156.14 / -6.71 / -4.12 %.
+
 ## Sources (checked 2026-11-16)
 
 Nasdaq `api.nasdaq.com/api/marketmovers?assetclass=stocks` needs a browser User-Agent.

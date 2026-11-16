@@ -7,6 +7,26 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-17
+
+### Added
+- **`YTD`** as a fifth span of the chart: from the first trading day of the year. The keys
+  are now `1`-`5`.
+- The day's chart draws **yesterday's close as a dotted line** and names it on the axis.
+- After the close the header also shows the **after-hours** price and its change.
+- Month, quarter, year-to-date and year end with **today's price**; the daily closes Nasdaq
+  delivers stop at yesterday.
+
+### Fixed
+- **The day's chart began at 4:00 with the pre-market.** Thin early trading filled the
+  first third of the picture and pushed the session, the part every other chart shows,
+  to the right. The day now starts with the opening bell at 9:30; trading after 16:00 is
+  drawn in grey behind it. Before the bell, the pre-market is all there is and is shown.
+- **The day's result was wrong after the close.** The header compared the after-hours
+  price with a `previousClose` from the chart answer that is not yesterday's close
+  (NVDA on 16 November: -6.34 % instead of -4.12 %). It now takes the session's close and
+  its change from the quote, as the table beside it does.
+
 ## [1.1.1] - 2026-11-17
 
 ### Changed

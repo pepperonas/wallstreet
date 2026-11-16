@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 3,
+ "asset_version": 4,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -99,7 +99,7 @@
   "meta_fallback": "Newest release · macOS and Linux · free, Apache-2.0",
   "feature_list": [
    "Interactive quote table: most active stocks, Nasdaq-100 movers, advancers and decliners; select a row by click or arrow keys",
-   "Chart of the selected stock in braille characters: the trading day by the minute, one month, three months or a year",
+   "Chart of the selected stock in braille characters: the trading day from the opening bell with the previous close as a line, one month, three months, year to date or a year",
    "Three tickers: gainers in green, losers in red, headlines in yellow",
    "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
    "Data without an API key or an account: Nasdaq market movers and public RSS feeds",
@@ -177,11 +177,11 @@
      "fr": "Cliquez sur une action, voyez sa courbe"
     },
     "p": {
-     "en": "The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today by the minute, or a month, three months or a year.",
-     "de": "Die Tabelle zeigt die meistgehandelten Aktien, die Bewegungen im Nasdaq-100, Gewinner und Verlierer. Ein Klick auf eine Zeile oder die Pfeiltasten genügen, und das Fenster daneben zeichnet den Verlauf dieser Aktie: heute im Minutentakt oder über einen Monat, drei Monate oder ein Jahr.",
-     "es": "La tabla muestra las acciones más negociadas, los movimientos del Nasdaq-100, las que suben y las que bajan. Haz clic en una fila o muévete con las flechas, y el panel de al lado dibuja la evolución de esa acción: hoy minuto a minuto, o un mes, tres meses o un año.",
-     "it": "La tabella elenca le azioni più scambiate, i movimenti del Nasdaq-100, i titoli in rialzo e in ribasso. Clicca una riga o spostati con le frecce, e il riquadro accanto disegna l'andamento di quel titolo: oggi minuto per minuto, oppure un mese, tre mesi o un anno.",
-     "fr": "Le tableau liste les actions les plus échangées, les mouvements du Nasdaq-100, les hausses et les baisses. Cliquez sur une ligne ou déplacez-vous avec les flèches, et le panneau voisin trace le cours de cette action : aujourd'hui minute par minute, ou sur un mois, trois mois ou un an."
+     "en": "The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year.",
+     "de": "Die Tabelle zeigt die meistgehandelten Aktien, die Bewegungen im Nasdaq-100, Gewinner und Verlierer. Ein Klick auf eine Zeile oder die Pfeiltasten genügen, und das Fenster daneben zeichnet den Verlauf dieser Aktie: heute ab Börsenstart oder über einen Monat, drei Monate, das laufende Jahr oder ein ganzes Jahr.",
+     "es": "La tabla muestra las acciones más negociadas, los movimientos del Nasdaq-100, las que suben y las que bajan. Haz clic en una fila o muévete con las flechas, y el panel de al lado dibuja la evolución de esa acción: hoy desde la apertura, o un mes, tres meses, el año en curso o un año completo.",
+     "it": "La tabella elenca le azioni più scambiate, i movimenti del Nasdaq-100, i titoli in rialzo e in ribasso. Clicca una riga o spostati con le frecce, e il riquadro accanto disegna l'andamento di quel titolo: oggi dall'apertura, oppure un mese, tre mesi, l'anno in corso o un anno intero.",
+     "fr": "Le tableau liste les actions les plus échangées, les mouvements du Nasdaq-100, les hausses et les baisses. Cliquez sur une ligne ou déplacez-vous avec les flèches, et le panneau voisin trace le cours de cette action : aujourd'hui depuis l'ouverture, ou sur un mois, trois mois, l'année en cours ou un an."
     }
    },
    {
@@ -307,11 +307,11 @@
      "fr": "Courbe"
     },
     "p": {
-     "en": "The selected stock over three months, drawn with braille characters.",
-     "de": "Die ausgewählte Aktie über drei Monate, aus Braille-Zeichen gezeichnet.",
-     "es": "La acción seleccionada durante tres meses, dibujada con caracteres braille.",
-     "it": "Il titolo selezionato su tre mesi, disegnato con caratteri braille.",
-     "fr": "L'action sélectionnée sur trois mois, tracée en caractères braille."
+     "en": "The selected stock since the start of the year, drawn with braille characters.",
+     "de": "Die ausgewählte Aktie seit Jahresbeginn, aus Braille-Zeichen gezeichnet.",
+     "es": "La acción seleccionada desde principios de año, dibujada con caracteres braille.",
+     "it": "Il titolo selezionato da inizio anno, disegnato con caratteri braille.",
+     "fr": "L'action sélectionnée depuis le début de l'année, tracée en caractères braille."
     }
    },
    {

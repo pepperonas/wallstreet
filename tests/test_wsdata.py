@@ -447,9 +447,9 @@ class Chart(Base):
     def test_gain_is_green_and_loss_red(self):
         data = dict(self.ws.history("NRDL", "1d"))
         data["last"], data["reference"] = 110.0, 100.0
-        self.assertIn("\x1b[1;32m+10.00  +10.00%", self.ws.chart_lines(data, "1d", 80, 20)[1])
+        self.assertIn("\x1b[1;32m +10.00  +10.00%", self.ws.chart_lines(data, "1d", 80, 20)[1])
         data["last"] = 90.0
-        self.assertIn("\x1b[1;31m-10.00  -10.00%", self.ws.chart_lines(data, "1d", 80, 20)[1])
+        self.assertIn("\x1b[1;31m -10.00  -10.00%", self.ws.chart_lines(data, "1d", 80, 20)[1])
 
     def test_the_current_span_is_marked(self):
         data = self.ws.history("NRDL", "3m")
@@ -461,7 +461,7 @@ class Chart(Base):
         """Per span the 1-based columns its label occupies in a rendered tab line."""
         plain = ANSI.sub("", line)
         return {key: range(plain.index(label) + 1, plain.index(label) + 1 + len(label))
-                for key, label, _ in self.ws.SPANS}
+                for key, label in self.ws.SPANS}
 
     def test_a_click_on_a_tab_names_that_span(self):
         # measured on what is drawn, so the click map cannot drift from the picture
@@ -474,7 +474,7 @@ class Chart(Base):
         # the highlighted block is what the eye takes for the button: every cell of
         # it must open the span, the cells left and right of it must not
         data = self.ws.history("NRDL", "1d")
-        for key, _, _ in self.ws.SPANS:
+        for key, _ in self.ws.SPANS:
             line = self.ws.chart_lines(data, key, 80, 20)[self.ws.TAB_ROW - 1]
             start = len(ANSI.sub("", line[:line.index("\x1b[7m")])) + 1
             block = line[line.index("\x1b[7m") + 4:line.index("\x1b[27m")]
@@ -490,7 +490,7 @@ class Chart(Base):
         gaps = [x for x in range(1, 80) if self.ws.tab_at(x, self.ws.TAB_ROW) is None]
         self.assertFalse(on_a_tab & set(gaps))
         self.assertIn(5, gaps)             # between 1D and 1M
-        self.assertIn(40, gaps)            # right of the last tab
+        self.assertIn(60, gaps)            # right of the last tab
         for y in (1, 2, 4, 10):
             self.assertIsNone(self.ws.tab_at(2, y))
 
@@ -520,8 +520,9 @@ class DemoHistory(Base):
         self.assertAlmostEqual(data["points"][0], data["reference"], places=6)
 
     def test_every_span_has_its_number_of_points(self):
-        self.assertEqual([len(self.ws.history("NRDL", k)["points"]) for k, _, _ in self.ws.SPANS],
-                         [390, 22, 64, 252])
+        with mock.patch.object(self.ws.time, "time", return_value=1_800_000_000.0):   # 2027-01-15
+            counts = {k: len(self.ws.history("NRDL", k)["points"]) for k, _ in self.ws.SPANS}
+        self.assertEqual(counts, {"1d": 390, "1m": 21, "3m": 63, "ytd": 9, "1y": 252})
 
     def test_two_reads_in_a_minute_agree(self):
         with mock.patch.object(self.ws.time, "time", return_value=1_800_000_000.0):
@@ -533,55 +534,172 @@ class DemoHistory(Base):
 
 
 class LiveHistory(Base):
+    """The live course, with the two Nasdaq answers (chart and info) replaced."""
     demo = False
 
-    def answer(self, chart, **extra):
-        data = {"company": "Evil\x1b[2J Corp", "lastSalePrice": "$1,010.50", "previousClose": "$1,000.00",
-                "chart": chart}
-        data.update(extra)
-        return json.dumps({"data": data}).encode()
+    def minute(self, hour, minute, value):
+        x = (hour * 3600 + minute * 60) * 1000 + 1_794_787_200_000        # a day, New York time as UTC
+        return {"x": x, "y": value, "z": {"dateTime": "%d:%02d" % (hour, minute)}}
 
-    def points(self, n=5):
-        return [{"y": 1000 + i, "z": {"dateTime": "t%d" % i}} for i in range(n)]
+    def day(self):
+        return ([self.minute(4, m, 162.0 + m / 100) for m in (0, 1, 2)]          # pre-market
+                + [self.minute(9, 30, 159.3), self.minute(12, 0, 158.0), self.minute(16, 0, 156.15)]
+                + [self.minute(17, 0, 155.9), self.minute(18, 30, 155.8)])        # after hours
 
-    def test_course_reference_and_labels_are_read(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points())):
+    def info(self, after_hours=True):
+        official = {"lastSalePrice": "$156.14", "netChange": "-6.71", "percentageChange": "-4.12%"}
+        late = {"lastSalePrice": "$155.80", "netChange": "-0.34", "percentageChange": "-0.22%"}
+        return {"primaryData": late if after_hours else official,
+                "secondaryData": official if after_hours else None,
+                "marketStatus": "After-Hours" if after_hours else "Open"}
+
+    def serve(self, chart=None, info=None, etf_only=False):
+        chart = self.day() if chart is None else chart
+        info = self.info() if info is None else info
+
+        def fetch(url):
+            if etf_only and "assetclass=stocks" in url:
+                return json.dumps({"data": None}).encode()
+            if "/info?" in url:
+                return json.dumps({"data": info}).encode()
+            # previousClose is what the API really sends there: a figure that is not yesterday's close
+            return json.dumps({"data": {"company": "Evil\x1b[2J Corp", "lastSalePrice": "$155.80",
+                                         "previousClose": "$166.19", "chart": chart}}).encode()
+        return mock.patch.object(self.ws, "fetch", side_effect=fetch)
+
+    def test_the_day_is_the_regular_session_not_the_pre_market(self):
+        with self.serve():
             data = self.ws.history("NVDA", "1d")
-        self.assertEqual(data["points"], [1000.0, 1001.0, 1002.0, 1003.0, 1004.0])
-        self.assertEqual((data["last"], data["reference"]), (1010.5, 1000.0))
-        self.assertEqual(data["labels"], ("t0", "t4"))
+        self.assertEqual(data["points"], [159.3, 158.0, 156.15, 155.9, 155.8])
+        self.assertEqual(data["labels"], ("9:30", "18:30"))
+
+    def test_after_hours_trading_is_marked_as_outside_the_session(self):
+        with self.serve():
+            self.assertEqual(self.ws.history("NVDA", "1d")["dim_from"], 3)
+
+    def test_the_result_of_the_day_is_the_close_against_yesterdays_close(self):
+        # not the after-hours price, and not the previousClose of the chart answer
+        with self.serve():
+            data = self.ws.history("NVDA", "1d")
+        self.assertEqual(data["last"], 156.14)
+        self.assertAlmostEqual(data["reference"], 162.85, places=6)
+        self.assertEqual(data["extended"], {"last": 155.8, "change": -0.34, "pct": -0.22, "label": "after-hours"})
+
+    def test_during_the_session_there_is_no_extended_quote(self):
+        chart = self.day()[:5]
+        with self.serve(chart=chart, info=self.info(after_hours=False)):
+            data = self.ws.history("NVDA", "1d")
+        self.assertIsNone(data["extended"])
+        self.assertIsNone(data["dim_from"])
+        self.assertAlmostEqual(data["reference"], 162.85, places=6)
+
+    def test_before_the_bell_the_pre_market_is_all_there_is(self):
+        with self.serve(chart=self.day()[:3]):
+            data = self.ws.history("NVDA", "1d")
+        self.assertEqual(len(data["points"]), 3)
+        self.assertEqual(data["dim_from"], 0)
+
+    def test_without_a_quote_the_course_comes_without_a_verdict(self):
+        with self.serve(info={"primaryData": None}):
+            data = self.ws.history("NVDA", "1d")
+        self.assertIsNone(data["reference"])
+        self.assertEqual(data["last"], 156.15)                 # the last price of the session
+        header = ANSI.sub("", self.ws.chart_lines(data, "1d", 80, 20)[1])
+        self.assertEqual(header.strip(), "156.15")
 
     def test_names_from_the_api_are_cleaned(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points())):
+        with self.serve():
             self.assertNotIn("\x1b", self.ws.history("NVDA", "1d")["name"])
 
+    def daily(self, last_label):
+        return [{"y": 100.0 + i, "z": {"dateTime": label}}
+                for i, label in enumerate(("10/01/2026", "10/02/2026", last_label))]
+
     def test_longer_spans_compare_with_their_first_day(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points())):
-            self.assertEqual(self.ws.history("NVDA", "3m")["reference"], 1000.0)
+        with self.serve(chart=self.daily("11/13/2026")):
+            self.assertEqual(self.ws.history("NVDA", "3m")["reference"], 100.0)
+
+    def test_today_is_added_to_the_daily_closes(self):
+        with mock.patch.object(self.ws.time, "time", return_value=1_794_870_000.0), \
+                self.serve(chart=self.daily("11/13/2026")):                # the 16th in New York
+            data = self.ws.history("NVDA", "1m")
+        self.assertEqual(data["points"], [100.0, 101.0, 102.0, 156.14])
+        self.assertEqual(data["labels"], ("10/01/2026", "11/16/2026"))
+        self.assertEqual(data["last"], 156.14)
+
+    def test_today_is_not_added_twice(self):
+        with mock.patch.object(self.ws.time, "time", return_value=1_794_870_000.0), \
+                self.serve(chart=self.daily("11/16/2026")):
+            data = self.ws.history("NVDA", "1m")
+        self.assertEqual(len(data["points"]), 3)
 
     def test_longer_spans_ask_for_a_date_range(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points())) as fetch:
+        with self.serve(chart=self.daily("11/13/2026")) as fetch:
             self.ws.history("NVDA", "1m")
-        self.assertRegex(fetch.call_args[0][0], r"fromdate=\d{4}-\d\d-\d\d&todate=\d{4}-\d\d-\d\d")
+        self.assertTrue(any(re.search(r"fromdate=\d{4}-\d\d-\d\d&todate=\d{4}-\d\d-\d\d", c[0][0])
+                            for c in fetch.call_args_list))
+
+    def test_the_year_to_date_starts_on_new_years_day(self):
+        with mock.patch.object(self.ws.time, "time", return_value=1_794_870_000.0), \
+                self.serve(chart=self.daily("11/13/2026")) as fetch:
+            self.ws.history("NVDA", "ytd")
+        self.assertTrue(any("fromdate=2026-01-01&" in c[0][0] for c in fetch.call_args_list))
 
     def test_an_etf_is_found_on_the_second_try(self):
-        def fetch(url):
-            return self.answer(self.points() if "assetclass=etf" in url else None)
-        with mock.patch.object(self.ws, "fetch", side_effect=fetch):
+        with self.serve(etf_only=True):
             self.assertEqual(len(self.ws.history("SPY", "1d")["points"]), 5)
 
     def test_no_chart_at_all_is_none(self):
         with mock.patch.object(self.ws, "fetch", return_value=b"<html>busy</html>"):
             self.assertIsNone(self.ws.history("NVDA", "1d"))
+            self.assertIsNone(self.ws.history("NVDA", "1y"))
 
     def test_a_single_point_is_no_chart(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points(1))):
+        with self.serve(chart=self.day()[3:4]):
             self.assertIsNone(self.ws.history("NVDA", "1d"))
 
     def test_the_symbol_cannot_leave_its_place_in_the_url(self):
-        with mock.patch.object(self.ws, "fetch", return_value=self.answer(self.points())) as fetch:
+        with self.serve() as fetch:
             self.ws.history("A/../B?x=1", "1d")
-        self.assertIn("/quote/A%2F..%2FB%3Fx%3D1/chart", fetch.call_args[0][0])
+        for call in fetch.call_args_list:
+            self.assertIn("/quote/A%2F..%2FB%3Fx%3D1/", call[0][0])
+
+
+class DayChart(Base):
+    """How the trading day is drawn."""
+    def data(self, **extra):
+        data = dict(self.ws.history("NRDL", "1d"))
+        data.update(points=[100.0, 98.0, 97.0, 96.0, 95.5, 95.0], last=97.0, reference=104.0,
+                    reference_line=True, dim_from=3,
+                    extended={"label": "after-hours", "last": 95.0, "change": -2.0, "pct": -2.06})
+        data.update(extra)
+        return data
+
+    def test_the_header_names_the_session_and_the_late_trade(self):
+        header = ANSI.sub("", self.ws.chart_lines(self.data(), "1d", 100, 20)[1])
+        self.assertEqual(header, "97.00 -7.00  -6.73%  after-hours 95.00 -2.00 (-2.06%)")
+
+    def test_the_late_trade_is_dropped_before_the_line_gets_too_long(self):
+        header = ANSI.sub("", self.ws.chart_lines(self.data(), "1d", 34, 20)[1])
+        self.assertEqual(header, "97.00 -7.00  -6.73%")
+
+    def test_the_previous_close_is_on_the_axis_and_drawn_as_a_line(self):
+        out = self.ws.chart_lines(self.data(), "1d", 80, 20)
+        marked = [l for l in out if "┈" in l]
+        self.assertEqual(len(marked), 1)
+        self.assertTrue(ANSI.sub("", marked[0]).rstrip().endswith("104.00"))
+        self.assertEqual(out.index(marked[0]), 3, "the reference is the highest value: top row")
+
+    def test_trading_after_the_close_is_grey(self):
+        rows = self.ws.chart_lines(self.data(reference_line=False), "1d", 80, 20)[3:-1]
+        coloured = "".join(re.findall(r"\x1b\[31m([^\x1b]*)", r)[0] for r in rows)
+        grey = "".join(re.findall(r"\x1b\[90m([^\x1b]*)", r)[0] for r in rows)
+        self.assertTrue(coloured.strip() and grey.strip())
+        self.assertEqual({len(re.findall(r"\x1b\[31m([^\x1b]*)", r)[0]) for r in rows}, {36})
+
+    def test_longer_spans_have_no_reference_line(self):
+        out = self.ws.chart_lines(self.ws.history("NRDL", "1y"), "1y", 80, 20)
+        self.assertFalse([l for l in out if "┈" in l])
 
 
 class Browse(Base):

@@ -24,7 +24,7 @@
     ],
     "features": [
       "Interactive quote table: most active stocks, Nasdaq-100 movers, advancers and decliners; select a row by click or arrow keys",
-      "Chart of the selected stock in braille characters: the trading day by the minute, one month, three months or a year",
+      "Chart of the selected stock in braille characters: the trading day from the opening bell with the previous close as a line, one month, three months, year to date or a year",
       "Three tickers: gainers in green, losers in red, headlines in yellow",
       "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
       "Data without an API key or an account: Nasdaq market movers and public RSS feeds",

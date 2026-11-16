@@ -354,7 +354,19 @@ def cmd_headlines():
 # The quote table and the chart are two processes in two panes.  What is
 # selected travels through one small file in the cache directory.
 
-SPANS = (("1d", "1D", 0), ("1m", "1M", 31), ("3m", "3M", 92), ("1y", "1Y", 366))
+SPANS = (("1d", "1D"), ("1m", "1M"), ("3m", "3M"), ("ytd", "YTD"), ("1y", "1Y"))
+SPAN_KEYS = [key for key, _ in SPANS]
+OPEN, CLOSE = 9 * 60 + 30, 16 * 60       # the regular session in minutes of the New York day
+
+
+def span_days(span, now=None):
+    """How many days back a span reaches; 0 for the trading day."""
+    now = time.time() if now is None else now
+    if span == "ytd":
+        # from the first trading day of the year, as chart sites count it; the change
+        # is then measured against that day's close like in every other span
+        return time.gmtime(now).tm_yday - 1
+    return {"1d": 0, "1m": 31, "3m": 92, "1y": 366}[span]
 
 
 def selection_path():
@@ -368,7 +380,7 @@ def read_selection():
         symbol = clean(data.get("symbol", ""))[:12]
         span = data.get("span")
         return (symbol if re.fullmatch(r"[A-Za-z0-9.^-]{1,12}", symbol) else "",
-                span if span in [k for k, _, _ in SPANS] else "1d")
+                span if span in SPAN_KEYS else "1d")
     except (OSError, ValueError, AttributeError):
         return "", "1d"
 
@@ -392,8 +404,9 @@ def demo_history(symbol, span):
     base = next((b for sym, _, b in DEMO_STOCKS if sym == symbol), 100.0)
     name = next((n for sym, n, _ in DEMO_STOCKS if sym == symbol), symbol)
     last = float(row["lastSalePrice"].lstrip("$")) if row else base
-    n = 390 if span == "1d" else {"1m": 22, "3m": 64, "1y": 252}[span]
-    start = base if span == "1d" else base * {"1m": 0.94, "3m": 0.86, "1y": 0.7}[span]
+    days = span_days(span)
+    n = 390 if span == "1d" else max(5, days * 252 // 366)
+    start = base if span == "1d" else base * (1 - min(0.3, days / 1220.0))
     rnd = random.Random("%s/%s/%d" % (symbol, span, time.time() // 86400))
     walk, level = [], 0.0
     for _ in range(n):
@@ -409,48 +422,125 @@ def demo_history(symbol, span):
     if span == "1d":
         labels = ("9:30 AM", "4:00 PM")
     else:
-        days = dict((k, d) for k, _, d in SPANS)[span]
         labels = (time.strftime("%m/%d/%Y", time.localtime(now - days * 86400)),
                   time.strftime("%m/%d/%Y", time.localtime(now)))
     return {"symbol": symbol, "name": name, "points": points, "labels": labels,
-            "last": last, "reference": base if span == "1d" else points[0]}
+            "last": last, "reference": base if span == "1d" else points[0],
+            "reference_line": span == "1d", "dim_from": None, "extended": None}
+
+
+def number(value):
+    """A price or a change as the API writes it: "$1,010.50", "-6.71", "-4.12%"."""
+    return float(str(value).replace("$", "").replace(",", "").replace("%", ""))
+
+
+def nasdaq(symbol, what, name, ttl, query=""):
+    """The "data" part of one Nasdaq answer for a symbol; a stock first, then an ETF."""
+    for asset in ("stocks", "etf"):
+        url = "https://api.nasdaq.com/api/quote/%s/%s?assetclass=%s%s" % (
+            urllib.parse.quote(symbol, safe=""), what, asset, query)
+        raw = cached("%s-%s-%s.json" % (name, re.sub(r"[^A-Za-z0-9]", "_", symbol), asset),
+                     ttl, lambda: fetch(url))
+        try:
+            data = json.loads(raw)["data"]
+        except (ValueError, KeyError, TypeError):
+            continue
+        if data and (what != "chart" or data.get("chart")):
+            return data
+    return None
+
+
+def quote(symbol):
+    """The day's official quote and, outside the session, the extended-hours one.
+
+    {"last", "change", "pct"} plus "extended": None or {"label", "last", "change", "pct"}.
+    After the close Nasdaq moves the session's figures into "secondaryData" and reports the
+    after-hours trade as the primary one - which is why the chart must not take the newest
+    price for the day's result.
+    """
+    data = nasdaq(symbol, "info", "info", 60)
+    try:
+        def part(block):
+            return {"last": number(block["lastSalePrice"]), "change": number(block["netChange"]),
+                    "pct": number(block["percentageChange"])}
+        primary = part(data["primaryData"])
+        secondary = data.get("secondaryData")
+        if secondary and secondary.get("lastSalePrice"):
+            official = part(secondary)
+            official["extended"] = dict(primary, label=clean(data.get("marketStatus") or "extended")[:14].lower())
+            return official
+        primary["extended"] = None
+        return primary
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def minute_of_day(point):
+    """Minutes since midnight in New York; the API writes local time as if it were UTC."""
+    t = time.gmtime(point["x"] / 1000)
+    return t.tm_hour * 60 + t.tm_min
+
+
+def day_history(symbol, data):
+    """The trading day: the regular session, with after-hours trading behind it."""
+    chart = [p for p in data["chart"] if "x" in p and "y" in p]
+    session = [p for p in chart if OPEN <= minute_of_day(p) <= CLOSE]
+    after = [p for p in chart if minute_of_day(p) > CLOSE]
+    if session:
+        shown, dim_from = session + after, (len(session) if after else None)
+    else:
+        shown, dim_from = chart, 0             # before the opening bell there is only pre-market
+    if len(shown) < 2:
+        return None
+    points = [float(p["y"]) for p in shown]
+    q = quote(symbol)
+    if q:
+        last, reference, extended = q["last"], q["last"] - q["change"], q["extended"]
+    else:                                      # no quote: show the course without a verdict
+        last, reference, extended = points[(dim_from or len(points)) - 1], None, None
+    return {"symbol": symbol, "name": clean(data.get("company") or symbol), "points": points,
+            "labels": (clean(shown[0]["z"]["dateTime"]), clean(shown[-1]["z"]["dateTime"])),
+            "last": last, "reference": reference, "reference_line": reference is not None,
+            "dim_from": dim_from, "extended": extended}
 
 
 def history(symbol, span):
-    """Course of one symbol: {symbol, name, points, labels, last, reference} or None."""
+    """Course of one symbol for a span, or None.
+
+    {symbol, name, points, labels, last, reference, reference_line, dim_from, extended}:
+    reference is what the change is measured against (None: unknown), dim_from the index
+    of the first point outside the regular session.
+    """
     if DEMO:
         return demo_history(symbol, span)
-    days = dict((k, d) for k, _, d in SPANS)[span]
-    query = ""
-    if days:
-        day = lambda t: time.strftime("%Y-%m-%d", time.gmtime(t))
-        query = "&fromdate=%s&todate=%s" % (day(time.time() - days * 86400), day(time.time()))
-    data = None
-    for asset in ("stocks", "etf"):
-        url = "https://api.nasdaq.com/api/quote/%s/chart?assetclass=%s%s" % (
-            urllib.parse.quote(symbol, safe=""), asset, query)
-        raw = cached("chart-%s-%s-%s.json" % (re.sub(r"[^A-Za-z0-9]", "_", symbol), span, asset),
-                     60 if span == "1d" else 3600, lambda: fetch(url))
-        try:
-            data = json.loads(raw)["data"]
-            if data and data.get("chart"):
-                break
-        except (ValueError, KeyError, TypeError):
-            data = None
-    if not data or not data.get("chart"):
-        return None
     try:
+        if span == "1d":
+            data = nasdaq(symbol, "chart", "chart-1d", 60)
+            return day_history(symbol, data) if data else None
+        day = lambda t: time.strftime("%Y-%m-%d", time.gmtime(t))
+        now = time.time()
+        data = nasdaq(symbol, "chart", "chart-" + span, 3600,
+                      "&fromdate=%s&todate=%s" % (day(now - span_days(span) * 86400), day(now)))
+        if not data:
+            return None
         points = [float(p["y"]) for p in data["chart"]]
-        number = lambda v: float(str(v).replace("$", "").replace(",", ""))
-        last = number(data.get("lastSalePrice") or points[-1])
-        reference = number(data["previousClose"]) if span == "1d" else points[0]
-        labels = (clean(data["chart"][0]["z"]["dateTime"]), clean(data["chart"][-1]["z"]["dateTime"]))
-    except (KeyError, TypeError, ValueError):
+        labels = [clean(data["chart"][0]["z"]["dateTime"]), clean(data["chart"][-1]["z"]["dateTime"])]
+        last = points[-1]
+        q = quote(symbol)
+        today = time.strftime("%m/%d/%Y", time.gmtime(now - 5 * 3600))
+        if q and labels[1] != today:
+            # the daily closes end with yesterday: today's price belongs at the right edge
+            points.append(q["last"])
+            labels[1], last = today, q["last"]
+        elif q:
+            last = q["last"]
+    except (KeyError, TypeError, ValueError, IndexError):
         return None
     if len(points) < 2:
         return None
     return {"symbol": symbol, "name": clean(data.get("company") or symbol), "points": points,
-            "labels": labels, "last": last, "reference": reference}
+            "labels": tuple(labels), "last": last, "reference": points[0],
+            "reference_line": False, "dim_from": None, "extended": None}
 
 
 # -------------------------------------------------------------------- chart
@@ -458,10 +548,13 @@ def history(symbol, span):
 BRAILLE = ((0x01, 0x08), (0x02, 0x10), (0x04, 0x20), (0x40, 0x80))   # [row][column] of a cell
 
 
-def plot(points, width, height):
-    """The course as HEIGHT strings of WIDTH braille characters (2x4 dots per cell)."""
+def plot(points, width, height, low=None, high=None):
+    """The course as HEIGHT strings of WIDTH braille characters (2x4 dots per cell).
+
+    LOW and HIGH widen the value range, for a reference line outside the course."""
     dots_w, dots_h = width * 2, height * 4
-    low, high = min(points), max(points)
+    low = min(points) if low is None else min(low, min(points))
+    high = max(points) if high is None else max(high, max(points))
     spread = (high - low) or 1.0
     ys = []
     for x in range(dots_w):
@@ -483,24 +576,30 @@ def price(value):
 
 
 TAB_ROW = 3            # the line of the chart pane that holds the span tabs, 1-based
-TAB_WIDTH, TAB_GAP = 4, 2
+TAB_GAP = 2
+
+
+def tab_cells():
+    """Per span the 1-based columns of its tab, as drawn by chart_lines."""
+    cells, x = {}, 1
+    for key, label in SPANS:
+        cells[key] = range(x, x + len(label) + 2)
+        x += len(label) + 2 + TAB_GAP
+    return cells
 
 
 def tab_at(x, y):
     """The span whose tab is at cell (x, y) of the chart pane, or None."""
-    if y != TAB_ROW or x < 1:
+    if y != TAB_ROW:
         return None
-    index, offset = divmod(x - 1, TAB_WIDTH + TAB_GAP)
-    if index < len(SPANS) and offset < TAB_WIDTH:
-        return SPANS[index][0]
-    return None
+    return next((key for key, cells in tab_cells().items() if x in cells), None)
 
 
 def chart_lines(data, span, cols, lines):
     """The chart pane as a list of at most LINES strings no wider than COLS - 1."""
     width = max(20, cols - 1)
     tabs = (" " * TAB_GAP).join(("\033[7m %s \033[27m" if key == span else " %s ") % label
-                                for key, label, _ in SPANS)
+                                for key, label in SPANS)
     out = []
     if not data:
         symbol = read_selection()[0]
@@ -512,24 +611,53 @@ def chart_lines(data, span, cols, lines):
             "No chart data for this symbol right now." if symbol
             else "Select a stock: click a row or use the arrow keys.")[:width])
         return out[:lines]
-    change = data["last"] - data["reference"]
-    pct = change / data["reference"] * 100 if data["reference"] else 0.0
+    reference = data.get("reference")
+    change = data["last"] - reference if reference is not None else 0.0
     colour = "32" if change >= 0 else "31"
     name_w = max(0, width - len(data["symbol"]) - 1)
     out.append("\033[1;34m%s\033[0m %s" % (data["symbol"], data["name"][:name_w]))
-    out.append("\033[1;35m%s\033[0m \033[1;%sm%+.2f  %+.2f%%\033[0m" % (
-        price(data["last"]), colour, change, pct))
+    head, plain = "\033[1;35m%s\033[0m" % price(data["last"]), price(data["last"])
+    if reference:
+        text = " %+.2f  %+.2f%%" % (change, change / reference * 100)
+        head, plain = head + "\033[1;%sm%s\033[0m" % (colour, text), plain + text
+    extended = data.get("extended")
+    if extended:
+        text = "  %s %s %+.2f (%+.2f%%)" % (extended["label"], price(extended["last"]),
+                                            extended["change"], extended["pct"])
+        if len(plain) + len(text) <= width:
+            head += "\033[90m%s\033[0m" % text
+    out.append(head)
     out.append("\033[90m%s\033[0m" % tabs)
     height = lines - 5
-    low, high = min(data["points"]), max(data["points"])
+    points = data["points"]
+    marked = reference if data.get("reference_line") and reference is not None else None
+    low = min(points) if marked is None else min(marked, min(points))
+    high = max(points) if marked is None else max(marked, max(points))
     axis = max(len(price(low)), len(price(high))) + 1
     plot_w = width - axis
     if height < 3 or plot_w < 10:
         return out[:lines]
-    for i, row in enumerate(plot(data["points"], plot_w, height)):
-        label = price(high) if i == 0 else price(low) if i == height - 1 else \
-            price((high + low) / 2) if i == height // 2 else ""
-        out.append("\033[%sm%s\033[0m\033[90m%*s\033[0m" % (colour, row, axis, label))
+    # the session in the colour of the day's result, trading outside it in grey
+    dim_from = data.get("dim_from")
+    dim_col = plot_w if dim_from is None else int(dim_from * plot_w / len(points))
+    mark_row = None
+    if marked is not None:
+        mark_row = int(round((high - marked) / ((high - low) or 1.0) * (height * 4 - 1))) // 4
+    labels = {0: price(high), height - 1: price(low), height // 2: price((high + low) / 2)}
+    if mark_row is not None:
+        # the reference takes the place of a neighbouring label instead of crowding it
+        for row in (mark_row - 1, mark_row + 1):
+            if row in labels and row not in (0, height - 1):
+                del labels[row]
+        labels[mark_row] = price(marked)
+    for i, row in enumerate(plot(points, plot_w, height, low, high)):
+        session, rest = row[:dim_col], row[dim_col:]
+        if i == mark_row:
+            # previous close: a dotted grey line wherever the course leaves room
+            dotted = lambda part, c: "".join(
+                "\033[90m\u2508\033[%sm" % c if ch == " " else ch for ch in part)
+            session, rest = dotted(session, colour), dotted(rest, "90")
+        out.append("\033[%sm%s\033[90m%s%*s\033[0m" % (colour, session, rest, axis, labels.get(i, "")))
     left, right = data["labels"]
     gap = max(1, plot_w - len(left) - len(right))
     out.append("\033[90m%s%s%s\033[0m" % (left, " " * gap, right)[:width + 9])
@@ -671,7 +799,7 @@ def cmd_browse():
             if picks and shown != index:
                 if table[index][1] != read_selection()[0]:
                     write_selection(symbol=table[index][1])
-                hint = "click or ↑↓ select · 1 2 3 4 span"
+                hint = "click or ↑↓ select · 1-5 span"
                 view = [("\033[48;5;238m%s\033[K\033[0m" % text if i == index else text + "\033[0m")
                         for i, (text, _) in enumerate(table)]
                 view += [""] * max(0, size[1] - 1 - len(view))
@@ -693,8 +821,8 @@ def cmd_browse():
                                                        ("key", "k"), ("key", "j")):
                     step = event[1] if event[0] == "wheel" else (-1 if event[1] in ("up", "k") else 1)
                     index = picks[max(0, min(len(picks) - 1, at + step))]
-                elif event[0] == "key" and event[1] in "1234":
-                    write_selection(span=SPANS[int(event[1]) - 1][0])
+                elif event[0] == "key" and event[1] in "12345":
+                    write_selection(span=SPAN_KEYS[int(event[1]) - 1])
     return 0
 
 
@@ -715,8 +843,8 @@ def cmd_chart():
                 seen, size = selection, now_size
                 draw(chart_lines(data, selection[1], size[0], size[1]) or [""])
             for event in term.events(0.25):
-                keys = [k for k, _, _ in SPANS]
-                if event[0] == "key" and event[1] in "1234":
+                keys = SPAN_KEYS
+                if event[0] == "key" and event[1] in "12345":
                     write_selection(span=keys[int(event[1]) - 1])
                 elif event[0] == "click" and tab_at(event[1], event[2]):
                     write_selection(span=tab_at(event[1], event[2]))      # a click on a tab opens it

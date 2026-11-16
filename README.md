@@ -126,8 +126,8 @@ wallstreet --version
 |---|---|---|
 | quote table | click on a row | select that stock |
 | quote table | `↑` `↓`, `j` `k`, mouse wheel | move the selection |
-| quote table or chart | `1` `2` `3` `4` | span of the chart: day, month, three months, year |
-| chart | click on `1D` `1M` `3M` `1Y` | open that span |
+| quote table or chart | `1` `2` `3` `4` `5` | span of the chart: day, month, three months, year to date, year |
+| chart | click on `1D` `1M` `3M` `YTD` `1Y` | open that span |
 | chart | click elsewhere, `→` `←` | next or previous span |
 | any pane | `Ctrl-C` | quit |
 
@@ -145,7 +145,7 @@ picture, below 110 columns the quote table and the tickers only.
 | Pane | What it shows |
 |---|---|
 | **Quotes** | most active stocks by dollar volume, Nasdaq-100 movers, advancers, decliners — symbol, name, last price, change, percent; green for up, red for down; one row is selected; redrawn every minute and when the pane is resized |
-| **Chart** | the course of the selected stock in braille characters — today by the minute, or a month, three months or a year of daily closes — with last price, change over the span and the axis values |
+| **Chart** | the course of the selected stock in braille characters, with last price, change over the span and the axis values. The day runs from the opening bell at 9:30 New York time, with yesterday's close as a dotted line and after-hours trading in grey; month, three months, year to date and year are daily closes ending with today's price |
 | **Gainers ticker** | the day's biggest gainers, scrolling, green |
 | **Losers ticker** | the day's biggest losers, scrolling, red |
 | **Headlines ticker** | headlines from all feeds, shuffled, scrolling, yellow |
@@ -162,6 +162,7 @@ picture, below 110 columns the quote table and the tickers only.
 |---|---|---|
 | quotes, gainers, losers | `api.nasdaq.com/api/marketmovers` — no key, no account | every 55 s |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
+| the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |
 | headlines, feed reader, pictures | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
 
 The quotes are the day's movements on the US exchanges; outside trading hours the last
@@ -253,6 +254,7 @@ matches `VERSION`, runs the tests, builds `wallstreet.tar.gz`, `install.sh` and
 - **"No market data available right now."** The Nasdaq API did not answer and there is no
   cached copy yet. It is tried again every minute; `wallstreet --demo` works without it.
 - **A click does nothing.** tmux's mouse support is off in your own session: `tmux set -g mouse on`, or use the arrow keys.
+- **The day's chart differs from another site before 9:30 or after 16:00.** The coloured part is the regular session; what trades after the close is grey, and the header names the after-hours price beside the day's result.
 - **"No chart data for this symbol right now."** Nasdaq has no course for some warrants and units among the movers; pick another row.
 - **The feed reader or the picture is missing.** `newsboat` or `img2txt` is not installed,
   or the terminal is narrower than 110 or 150 columns.

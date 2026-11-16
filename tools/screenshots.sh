@@ -18,9 +18,9 @@ tmux kill-session -t $S 2>/dev/null || true
 tmux new-session -d -s $S -x 172 -y 50 "bash"
 tmux send-keys -t $S "WALLSTREET_OWN_SESSION=1 $PWD/bin/wallstreet --demo; exit" Enter
 sleep 22
-# select a stock further down and the three-month span, as a user would
+# select a stock further down and the year to date, as a user would
 tmux send-keys -t $S.0 Down Down Down Down
-tmux send-keys -t $S.0 3
+tmux send-keys -t $S.0 4
 sleep 4
 python3 tools/termshot.py $S "$OUT/wallstreet.png"
 python3 tools/termshot.py $S "$OUT/quotes.png" --pane 0
