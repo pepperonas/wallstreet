@@ -1,7 +1,7 @@
 class Wallstreet < Formula
   desc "Fill your console with Wall Street-like news and stats"
   homepage "https://github.com/dustinkirkland/hollywood"
-  url "file:///Users/martin/claude/wallstreet", using: :git, branch: "main", revision: "790039d22483134567501615d5e66946ee47516b"
+  url "file:///Users/martin/claude/wallstreet", using: :git, branch: "main", revision: "64e21e476d6e41b3fa94879106c766a03f4a57b4"
   version "1.27"
   license "Apache-2.0"
   head "file:///Users/martin/claude/wallstreet", using: :git, branch: "main"
