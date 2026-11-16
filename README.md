@@ -39,7 +39,8 @@ ohne neue Einträge).
     share/wallstreet/wsdata   holt, puffert und formatiert die Daten (Python 3, nur Standardbibliothek)
     packaging/wallstreet.rb   Homebrew-Formel
 
-`wsdata` puffert im temporären Verzeichnis (`wallstreet-cache-<uid>`): Kurse
+`wsdata` puffert in einem nur für den eigenen Benutzer schreibbaren Ordner
+(`~/Library/Caches/wallstreet`, unter Linux `~/.cache/wallstreet`): Kurse
 55 Sekunden, Feeds 5 Minuten, Bilder einen Tag. Mehrere Fenster teilen sich so
 eine Abfrage, und bei Netzausfall bleibt der letzte Stand stehen.
 
@@ -55,3 +56,10 @@ Einzeln ausprobieren:
 - Die Programme `w3m`, `rsstail`, `ticker` und `wget` werden nicht mehr gebraucht;
   das Laufband zeichnet `wsdata marquee` selbst.
 - Ctrl-C beendet die ganze Sitzung, wenn `wallstreet` sie selbst gestartet hat.
+
+## Umgang mit fremden Daten
+
+Kurse und Feeds kommen aus dem Netz und gelten als nicht vertrauenswürdig:
+Steuerzeichen werden vor der Ausgabe entfernt, Bilder nur über http(s) von
+öffentlich erreichbaren Adressen geladen (keine lokalen Dateien, keine
+Adressen im eigenen Netz), und Antworten über 8 MB werden verworfen.

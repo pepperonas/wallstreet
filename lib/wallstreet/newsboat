@@ -11,8 +11,7 @@ trap "pkill -9 -f lib/$PKG/ >/dev/null 2>&1; exit" HUP INT QUIT TERM
 
 command -v newsboat >/dev/null 2>&1 || exit 1
 dir="$(dirname "$0")/../../share/$PKG"
-cache="${TMPDIR:-/tmp}/$PKG-newsboat-$(id -u)"
-mkdir -p "$cache"
+cache=$("$WSDATA" cachedir) || exit 1
 while true; do
 	newsboat -r -C "$dir"/newsboat.config -u "$dir"/newsboat.urls -c "$cache/cache.db"
 	sleep 1

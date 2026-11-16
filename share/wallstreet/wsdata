@@ -12,19 +12,25 @@
 #   wsdata movers up|down            one line of gainers / losers
 #   wsdata headlines                 one headline per line
 #   wsdata image                     path of a random downloaded picture
+#   wsdata cachedir                  path of the private cache directory
 #   wsdata marquee COLOR DELAY TEXT  scroll TEXT once across the terminal
 #
 # Licensed under the Apache License, Version 2.0, like the rest of this
 # package.  Python standard library only.
 
+import ipaddress
 import json
 import os
 import random
 import re
 import shutil
+import socket
+import stat
 import sys
 import tempfile
 import time
+import unicodedata
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 import zlib
@@ -33,22 +39,81 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0 Safari/537.36")
 MOVERS_URL = "https://api.nasdaq.com/api/marketmovers?assetclass=stocks"
 HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE = os.path.join(tempfile.gettempdir(), "wallstreet-cache-%d" % os.getuid())
+MAX_BYTES = 8 * 1024 * 1024
+
+
+def cache_dir():
+    """A directory only this user can write to.  Not under /tmp: a shared
+    temporary directory would let another local user plant a symlink."""
+    base = os.environ.get("XDG_CACHE_HOME")
+    if not base:
+        home = os.path.expanduser("~")
+        base = os.path.join(home, "Library", "Caches") if sys.platform == "darwin" \
+            else os.path.join(home, ".cache")
+    path = os.path.join(base, "wallstreet")
+    os.makedirs(path, mode=0o700, exist_ok=True)
+    st = os.lstat(path)
+    if not stat.S_ISDIR(st.st_mode) or st.st_uid != os.getuid():
+        raise SystemExit("wsdata: refusing to use cache directory %s" % path)
+    if st.st_mode & 0o077:
+        os.chmod(path, 0o700)
+    return path
+
+
+CACHE = cache_dir()
+
+# Only plain web requests: no file://, ftp:// or anything else
+OPENER = urllib.request.OpenerDirector()
+for _h in (urllib.request.HTTPHandler, urllib.request.HTTPSHandler,
+           urllib.request.HTTPDefaultErrorHandler,
+           urllib.request.HTTPErrorProcessor):
+    OPENER.add_handler(_h())
+
+
+class _Redirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+OPENER.add_handler(_Redirect())
+
+
+def check_url(url):
+    """Refuse anything that is not a web address of a public host.  Feed
+    contents decide which pictures are fetched, so they are not trusted."""
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise ValueError("refusing URL %r" % url)
+    for info in socket.getaddrinfo(parts.hostname, None):
+        ip = ipaddress.ip_address(info[4][0].split("%")[0])
+        if not ip.is_global:
+            raise ValueError("refusing non-public host %r" % parts.hostname)
+    return url
+
+
+def clean(text):
+    """Remote text without control characters, so that a feed or a company
+    name cannot send escape sequences to the terminal."""
+    return "".join(ch if unicodedata.category(ch)[0] != "C" else " "
+                   for ch in str(text))
 COLORS = {"red": 31, "green": 32, "yellow": 33, "blue": 34,
           "magenta": 35, "cyan": 36, "white": 37}
 
 
 def fetch(url, timeout=15):
-    req = urllib.request.Request(url, headers={
+    req = urllib.request.Request(check_url(url), headers={
         "User-Agent": UA, "Accept": "application/json, text/xml, */*"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    with OPENER.open(req, timeout=timeout) as r:
+        data = r.read(MAX_BYTES + 1)
+    if len(data) > MAX_BYTES:
+        raise ValueError("response too large")
+    return data
 
 
 def cached(name, ttl, producer):
     """Return producer() as bytes, reusing a copy younger than ttl seconds.
     A stale copy is better than nothing when the network is down."""
-    os.makedirs(CACHE, mode=0o700, exist_ok=True)
     path = os.path.join(CACHE, name)
     try:
         if time.time() - os.path.getmtime(path) < ttl:
@@ -58,8 +123,8 @@ def cached(name, ttl, producer):
         pass
     try:
         data = producer()
-        tmp = "%s.%d" % (path, os.getpid())
-        with open(tmp, "wb") as f:
+        fd, tmp = tempfile.mkstemp(dir=CACHE, prefix=".tmp-")
+        with os.fdopen(fd, "wb") as f:
             f.write(data)
         os.replace(tmp, path)
         return data
@@ -81,7 +146,8 @@ def movers():
 
 def rows(section):
     try:
-        return movers()[section]["table"]["rows"]
+        return [{k: clean(v) for k, v in r.items()}
+                for r in movers()[section]["table"]["rows"]]
     except Exception:
         return []
 
@@ -109,11 +175,11 @@ def feeds():
             except Exception:
                 continue
             for item in root.iter("item"):
-                title = (item.findtext("title") or "").strip()
+                title = clean(item.findtext("title") or "").strip()
                 pic = None
                 for el in item.iter():
                     u = el.attrib.get("url", "")
-                    if re.search(r"\.jpe?g(\?|$)", u):
+                    if re.match(r"https?://", u) and re.search(r"\.jpe?g(\?|$)", u):
                         pic = u
                         break
                 if title:
@@ -200,7 +266,7 @@ def cmd_image():
 
 
 def cmd_marquee(color, delay, text):
-    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", clean(text)).strip()
     if not text:
         return 1
     code = COLORS.get(color, 37)
@@ -230,6 +296,9 @@ def main(argv):
         return cmd_headlines()
     if cmd == "image":
         return cmd_image()
+    if cmd == "cachedir":
+        print(CACHE)
+        return 0
     if cmd == "marquee" and len(argv) > 4:
         return cmd_marquee(argv[2], argv[3], argv[4])
     sys.stderr.write(__doc__ or "usage: wsdata table|movers|headlines|image|marquee\n")
