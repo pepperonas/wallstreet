@@ -1,0 +1,32 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "wallstreet",
+    "identifier": "did:web:wallstreet.celox.io",
+    "documentationUrl": "https://wallstreet.celox.io/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:wallstreet.celox.io:skills:get-wallstreet",
+      "displayName": "Get wallstreet",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://wallstreet.celox.io/skills/get-wallstreet/SKILL.md",
+      "description": "wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.",
+      "tags": [
+        "terminal",
+        "tmux",
+        "stocks",
+        "ticker",
+        "rss",
+        "macos",
+        "open-source"
+      ],
+      "representativeQueries": [
+        "Stock ticker for the terminal on macOS",
+        "How do I install wallstreet with Homebrew?",
+        "Download the latest wallstreet release",
+        "Terminal dashboard with live stock quotes and news headlines without an API key"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,535 @@
+{
+ "$comment": "wallstreet project page - built with the product-page kit (~/claude/_templates/apps/product-page). Change texts here, then run build.py --force.",
+ "name": "wallstreet",
+ "slug": "wallstreet",
+ "aliases": [],
+ "repo": "pepperonas/wallstreet",
+ "branch": "main",
+ "tagline": "The trading floor, in your terminal.",
+ "license": "Apache-2.0",
+ "tls": "wildcard",
+ "year": 2026,
+ "asset_version": 1,
+ "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
+ "theme": {
+  "bg": "#0c0d13",
+  "bg-lowest": "#08090d",
+  "surface-low": "#12131b",
+  "surface": "#171923",
+  "surface-high": "#20222e",
+  "surface-highest": "#2a2d3b",
+  "on-bg": "#f0f1f7",
+  "on-variant": "#b8bccd",
+  "outline": "#868aa0",
+  "outline-variant": "#2d3040",
+  "primary": "#f0c060",
+  "on-primary": "#3a2600",
+  "primary-container": "#6b4a08",
+  "on-primary-container": "#ffe9b8",
+  "secondary-container": "#33301f",
+  "on-secondary-container": "#f3e6c2",
+  "tertiary": "#7be39b",
+  "accent": "#c98a14"
+ },
+ "hero": {
+  "bg": "#0c0d13",
+  "width": 2912,
+  "height": 1440
+ },
+ "screens": null,
+ "ld": {
+  "type": "SoftwareApplication",
+  "category": "FinanceApplication",
+  "subcategory": "Terminal market screen",
+  "os": "macOS, Linux"
+ },
+ "targets": [
+  {
+   "id": "unix",
+   "label": "Download for macOS and Linux",
+   "short": "macOS · Linux",
+   "asset": "^wallstreet\\.tar\\.gz$",
+   "requirement": "macOS or Linux · tmux",
+   "ua": "macintosh|mac os x|^(?!.*android).*linux",
+   "i18n": {
+    "en": "Download for macOS and Linux",
+    "de": "Download für macOS und Linux",
+    "es": "Descargar para macOS y Linux",
+    "it": "Scarica per macOS e Linux",
+    "fr": "Télécharger pour macOS et Linux"
+   },
+   "i18n_short": {
+    "en": "macOS · Linux",
+    "de": "macOS · Linux",
+    "es": "macOS · Linux",
+    "it": "macOS · Linux",
+    "fr": "macOS · Linux"
+   }
+  },
+  {
+   "id": "installer",
+   "label": "Installer script (install.sh)",
+   "short": "install.sh",
+   "asset": "^install\\.sh$",
+   "requirement": "sh · curl · verifies the SHA-256",
+   "i18n": {
+    "en": "Installer script (install.sh)",
+    "de": "Installationsskript (install.sh)",
+    "es": "Script de instalación (install.sh)",
+    "it": "Script di installazione (install.sh)",
+    "fr": "Script d'installation (install.sh)"
+   },
+   "i18n_short": {
+    "en": "install.sh",
+    "de": "install.sh",
+    "es": "install.sh",
+    "it": "install.sh",
+    "fr": "install.sh"
+   }
+  }
+ ],
+ "chips": [
+  {
+   "label": "macOS",
+   "color": "#e5e7eb"
+  },
+  {
+   "label": "Linux",
+   "color": "#e0af68"
+  },
+  {
+   "label": "tmux",
+   "color": "#7be39b"
+  },
+  {
+   "label": "Homebrew",
+   "color": "#fbb040"
+  }
+ ],
+ "verify_rows": [],
+ "content": {
+  "meta": {
+   "title": "wallstreet — Live Stock Tickers for Your Terminal",
+   "description": "Free, open-source market screen for the terminal: live quotes, gainers and losers tickers, headlines and a feed reader in tmux. macOS and Linux.",
+   "og_title": "wallstreet — the trading floor, in your terminal.",
+   "og_description": "Live quotes, three tickers, headlines and press photos as ASCII art, in one terminal window. Free, open source, no API key, with a demo mode.",
+   "twitter_description": "Live quotes, tickers and headlines in one terminal window. Free, open source, macOS and Linux.",
+   "image_alt": "A terminal with a table of stock quotes, a feed reader, a chart as ASCII art and three tickers for gainers, losers and headlines"
+  },
+  "summary": "wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.",
+  "meta_fallback": "Newest release · macOS and Linux · free, Apache-2.0",
+  "feature_list": [
+   "Quote table: most active stocks, Nasdaq-100 movers, advancers and decliners with price, change and percent",
+   "Three tickers: gainers in green, losers in red, headlines in yellow",
+   "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
+   "Data without an API key or an account: Nasdaq market movers and public RSS feeds",
+   "Demo mode with invented companies and headlines, no network request",
+   "Layout follows the terminal width; the table redraws when its pane is resized",
+   "Short-lived private cache: several panes share one request, the last good state survives a network failure",
+   "Text from the network is stripped of control characters before it is printed",
+   "Runs on macOS and Linux; Python standard library only"
+  ],
+  "limits": [
+   "wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.",
+   "The quotes are the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols and no history.",
+   "The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.",
+   "It needs tmux and Python 3.9 or newer; there is no Windows version.",
+   "Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done."
+  ],
+  "agent_queries": [
+   "Stock ticker for the terminal on macOS",
+   "How do I install wallstreet with Homebrew?",
+   "Download the latest wallstreet release",
+   "Terminal dashboard with live stock quotes and news headlines without an API key"
+  ],
+  "tags": [
+   "terminal",
+   "tmux",
+   "stocks",
+   "ticker",
+   "rss",
+   "macos",
+   "open-source"
+  ],
+  "skill_description": "Download, verify and install the newest wallstreet - the free, open-source market screen for the terminal with live quotes, tickers and headlines in tmux (macOS, Linux). Use when someone asks for the tool, its latest version, how to install it, or how to check that a download is genuine.",
+  "hero.kicker": {
+   "en": "Terminal · Open source · Free",
+   "de": "Terminal · Open Source · Kostenlos",
+   "es": "Terminal · Código abierto · Gratis",
+   "it": "Terminale · Open source · Gratis",
+   "fr": "Terminal · Open source · Gratuit"
+  },
+  "hero.title": {
+   "en": "The trading floor, <br>in your terminal.",
+   "de": "Das Börsenparkett, <br>in deinem Terminal.",
+   "es": "El parqué, <br>en tu terminal.",
+   "it": "La sala di contrattazione, <br>nel tuo terminale.",
+   "fr": "La salle des marchés, <br>dans votre terminal."
+  },
+  "hero.lead": {
+   "en": "wallstreet turns one terminal window into a trading-desk screen: live quotes, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. No API key, no account — and a demo mode when the news should not be real.",
+   "de": "wallstreet macht aus einem Terminalfenster den Bildschirm eines Handelsplatzes: aktuelle Kurse, drei Laufbänder für Gewinner, Verlierer und Schlagzeilen, ein Feedreader und Pressefotos als ASCII-Art. Kein API-Schlüssel, kein Konto — und ein Demo-Modus, wenn die Nachrichten nicht echt sein sollen.",
+   "es": "wallstreet convierte una ventana de terminal en la pantalla de una mesa de operaciones: cotizaciones en vivo, tres cintas para subidas, bajadas y titulares, un lector de feeds y fotos de prensa en arte ASCII. Sin clave de API ni cuenta, y con un modo demo para cuando las noticias no deban ser reales.",
+   "it": "wallstreet trasforma una finestra del terminale nello schermo di una postazione di trading: quotazioni in tempo reale, tre nastri per rialzi, ribassi e titoli, un lettore di feed e foto di stampa in ASCII art. Nessuna chiave API, nessun account, e una modalità demo quando le notizie non devono essere vere.",
+   "fr": "wallstreet transforme une fenêtre de terminal en écran de salle des marchés : cours en direct, trois bandeaux pour les hausses, les baisses et les titres, un lecteur de flux et des photos de presse en art ASCII. Ni clé d'API ni compte, et un mode démo quand les nouvelles ne doivent pas être réelles."
+  },
+  "pl.h": {
+   "en": "Runs where tmux runs",
+   "de": "Läuft, wo tmux läuft",
+   "es": "Funciona donde funciona tmux",
+   "it": "Funziona dove funziona tmux",
+   "fr": "Fonctionne là où tmux fonctionne"
+  },
+  "f.h": {
+   "en": "Real numbers. Real news. One window.",
+   "de": "Echte Zahlen. Echte Nachrichten. Ein Fenster.",
+   "es": "Cifras reales. Noticias reales. Una ventana.",
+   "it": "Numeri veri. Notizie vere. Una finestra.",
+   "fr": "De vrais chiffres. De vraies nouvelles. Une fenêtre."
+  },
+  "features": [
+   {
+    "t": {
+     "en": "The quote table",
+     "de": "Die Kurstabelle",
+     "es": "La tabla de cotizaciones",
+     "it": "La tabella delle quotazioni",
+     "fr": "Le tableau des cours"
+    },
+    "p": {
+     "en": "The most active stocks, the Nasdaq-100 movers, advancers and decliners — symbol, name, last price, change and percent, green for up and red for down. It redraws every minute and never prints more rows than fit.",
+     "de": "Die meistgehandelten Aktien, die Bewegungen im Nasdaq-100, Gewinner und Verlierer — Kürzel, Name, letzter Kurs, Veränderung und Prozent, grün für Plus und rot für Minus. Sie zeichnet sich jede Minute neu und zeigt nie mehr Zeilen, als hineinpassen.",
+     "es": "Las acciones más negociadas, los movimientos del Nasdaq-100, las que suben y las que bajan: símbolo, nombre, último precio, variación y porcentaje, en verde las subidas y en rojo las bajadas. Se redibuja cada minuto y nunca muestra más filas de las que caben.",
+     "it": "Le azioni più scambiate, i movimenti del Nasdaq-100, i titoli in rialzo e in ribasso: simbolo, nome, ultimo prezzo, variazione e percentuale, verde per i rialzi e rosso per i ribassi. Si ridisegna ogni minuto e non mostra mai più righe di quante ce ne stiano.",
+     "fr": "Les actions les plus échangées, les mouvements du Nasdaq-100, les hausses et les baisses : symbole, nom, dernier cours, variation et pourcentage, en vert pour les hausses et en rouge pour les baisses. Il se redessine chaque minute et n'affiche jamais plus de lignes qu'il n'en tient."
+    }
+   },
+   {
+    "t": {
+     "en": "Three tickers",
+     "de": "Drei Laufbänder",
+     "es": "Tres cintas",
+     "it": "Tre nastri",
+     "fr": "Trois bandeaux"
+    },
+    "p": {
+     "en": "Across the bottom of the window: the day's biggest gainers in green, the biggest losers in red and the headlines of all feeds in yellow, each scrolling at its own pace.",
+     "de": "Am unteren Rand des Fensters: die größten Gewinner des Tages in Grün, die größten Verlierer in Rot und die Schlagzeilen aller Feeds in Gelb, jedes in seinem eigenen Tempo.",
+     "es": "En la parte inferior de la ventana: las mayores subidas del día en verde, las mayores bajadas en rojo y los titulares de todos los feeds en amarillo, cada una a su ritmo.",
+     "it": "Nella parte bassa della finestra: i maggiori rialzi del giorno in verde, i maggiori ribassi in rosso e i titoli di tutti i feed in giallo, ognuno al proprio ritmo.",
+     "fr": "En bas de la fenêtre : les plus fortes hausses du jour en vert, les plus fortes baisses en rouge et les titres de tous les flux en jaune, chacun à son rythme."
+    }
+   },
+   {
+    "t": {
+     "en": "News beside the numbers",
+     "de": "Nachrichten neben den Zahlen",
+     "es": "Noticias junto a las cifras",
+     "it": "Notizie accanto ai numeri",
+     "fr": "Les nouvelles à côté des chiffres"
+    },
+    "p": {
+     "en": "A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.",
+     "de": "Ein Feedreader zeigt die neuesten Artikel und lädt von selbst nach; daneben erscheint ein Pressefoto aus den Feeds als farbige ASCII-Art. Eine Feed-Liste speist Reader, Laufband und Bilder — wer andere Nachrichten will, ändert sie.",
+     "es": "Un lector de feeds muestra los últimos artículos y se recarga solo; a su lado aparece una foto de prensa de los feeds en arte ASCII en color. Una sola lista de feeds alimenta el lector, la cinta y las imágenes: edítala para seguir otras noticias.",
+     "it": "Un lettore di feed mostra gli ultimi articoli e si ricarica da solo; accanto appare una foto di stampa dai feed in ASCII art a colori. Un unico elenco di feed alimenta il lettore, il nastro e le immagini: modificalo per seguire altre notizie.",
+     "fr": "Un lecteur de flux affiche les derniers articles et se recharge tout seul ; à côté, une photo de presse issue des flux apparaît en art ASCII en couleur. Une seule liste de flux alimente le lecteur, le bandeau et les images : modifiez-la pour suivre d'autres nouvelles."
+    }
+   },
+   {
+    "t": {
+     "en": "No key, no account",
+     "de": "Kein Schlüssel, kein Konto",
+     "es": "Sin clave, sin cuenta",
+     "it": "Nessuna chiave, nessun account",
+     "fr": "Ni clé, ni compte"
+    },
+    "p": {
+     "en": "The quotes come from the Nasdaq market-movers interface, the news from public RSS feeds of BBC, CNBC, MarketWatch and the WSJ. Nothing to register, nothing to configure, and wallstreet itself collects nothing.",
+     "de": "Die Kurse kommen von der Marktbewegungs-Schnittstelle der Nasdaq, die Nachrichten aus öffentlichen RSS-Feeds von BBC, CNBC, MarketWatch und WSJ. Nichts zu registrieren, nichts einzustellen, und wallstreet selbst sammelt nichts.",
+     "es": "Las cotizaciones vienen de la interfaz de movimientos de mercado del Nasdaq, las noticias de feeds RSS públicos de BBC, CNBC, MarketWatch y el WSJ. Nada que registrar, nada que configurar, y wallstreet no recopila nada.",
+     "it": "Le quotazioni arrivano dall'interfaccia dei movimenti di mercato del Nasdaq, le notizie dai feed RSS pubblici di BBC, CNBC, MarketWatch e WSJ. Niente da registrare, niente da configurare, e wallstreet non raccoglie nulla.",
+     "fr": "Les cours viennent de l'interface des mouvements de marché du Nasdaq, les nouvelles de flux RSS publics de la BBC, de CNBC, de MarketWatch et du WSJ. Rien à enregistrer, rien à configurer, et wallstreet ne collecte rien."
+    }
+   },
+   {
+    "t": {
+     "en": "A demo mode for the camera",
+     "de": "Ein Demo-Modus für die Kamera",
+     "es": "Un modo demo para la cámara",
+     "it": "Una modalità demo per la telecamera",
+     "fr": "Un mode démo pour la caméra"
+    },
+    "p": {
+     "en": "<code>wallstreet --demo</code> shows twenty companies that do not exist, prices that drift every minute and invented headlines. Nothing is fetched — for presentations, screenshots, a film set or a machine without a network.",
+     "de": "<code>wallstreet --demo</code> zeigt zwanzig Firmen, die es nicht gibt, Kurse, die sich jede Minute bewegen, und erfundene Schlagzeilen. Es wird nichts abgerufen — für Vorträge, Screenshots, ein Filmset oder einen Rechner ohne Netz.",
+     "es": "<code>wallstreet --demo</code> muestra veinte empresas que no existen, precios que varían cada minuto y titulares inventados. No se descarga nada: para presentaciones, capturas, un rodaje o un equipo sin red.",
+     "it": "<code>wallstreet --demo</code> mostra venti aziende che non esistono, prezzi che cambiano ogni minuto e titoli inventati. Non viene scaricato nulla: per presentazioni, schermate, un set cinematografico o un computer senza rete.",
+     "fr": "<code>wallstreet --demo</code> affiche vingt entreprises qui n'existent pas, des cours qui bougent chaque minute et des titres inventés. Rien n'est téléchargé : pour des présentations, des captures d'écran, un plateau de tournage ou une machine sans réseau."
+    }
+   },
+   {
+    "t": {
+     "en": "Careful with what the network sends",
+     "de": "Vorsichtig mit dem, was aus dem Netz kommt",
+     "es": "Cuidado con lo que envía la red",
+     "it": "Attento a ciò che arriva dalla rete",
+     "fr": "Prudent avec ce que le réseau envoie"
+    },
+    "p": {
+     "en": "Headlines and company names are stripped of control characters before they reach your terminal. Pictures are loaded over http(s) from public hosts only, and the cache is a folder that only you can write to.",
+     "de": "Schlagzeilen und Firmennamen werden von Steuerzeichen befreit, bevor sie dein Terminal erreichen. Bilder werden nur über http(s) von öffentlichen Adressen geladen, und der Zwischenspeicher ist ein Ordner, in den nur du schreiben kannst.",
+     "es": "Los titulares y los nombres de empresas se limpian de caracteres de control antes de llegar a tu terminal. Las imágenes solo se cargan por http(s) desde hosts públicos, y la caché es una carpeta en la que solo tú puedes escribir.",
+     "it": "Titoli e nomi delle aziende vengono ripuliti dai caratteri di controllo prima di arrivare al terminale. Le immagini si caricano solo via http(s) da host pubblici, e la cache è una cartella in cui puoi scrivere solo tu.",
+     "fr": "Les titres et les noms d'entreprises sont débarrassés des caractères de contrôle avant d'atteindre votre terminal. Les images ne sont chargées qu'en http(s) depuis des hôtes publics, et le cache est un dossier dans lequel vous seul pouvez écrire."
+    }
+   }
+  ],
+  "s.h": {
+   "en": "What it looks like",
+   "de": "So sieht es aus",
+   "es": "Así se ve",
+   "it": "Come si presenta",
+   "fr": "À quoi cela ressemble"
+  },
+  "s.alt": {
+   "en": "Screenshots of wallstreet",
+   "de": "Screenshots von wallstreet",
+   "es": "Capturas de wallstreet",
+   "it": "Schermate di wallstreet",
+   "fr": "Captures d'écran de wallstreet"
+  },
+  "gallery": [
+   {
+    "id": "wallstreet",
+    "t": {
+     "en": "The whole screen",
+     "de": "Der ganze Bildschirm",
+     "es": "La pantalla completa",
+     "it": "Lo schermo intero",
+     "fr": "L'écran entier"
+    },
+    "p": {
+     "en": "Quotes, feed reader, picture and three tickers — here in demo mode.",
+     "de": "Kurse, Feedreader, Bild und drei Laufbänder — hier im Demo-Modus.",
+     "es": "Cotizaciones, lector de feeds, imagen y tres cintas, aquí en modo demo.",
+     "it": "Quotazioni, lettore di feed, immagine e tre nastri, qui in modalità demo.",
+     "fr": "Cours, lecteur de flux, image et trois bandeaux, ici en mode démo."
+    }
+   },
+   {
+    "id": "table",
+    "t": {
+     "en": "Quote table",
+     "de": "Kurstabelle",
+     "es": "Tabla de cotizaciones",
+     "it": "Tabella delle quotazioni",
+     "fr": "Tableau des cours"
+    },
+    "p": {
+     "en": "Four sections, fitted to the height of the pane.",
+     "de": "Vier Abschnitte, an die Höhe des Fensters angepasst.",
+     "es": "Cuatro secciones, ajustadas a la altura del panel.",
+     "it": "Quattro sezioni, adattate all'altezza del riquadro.",
+     "fr": "Quatre sections, ajustées à la hauteur du panneau."
+    }
+   },
+   {
+    "id": "newsboat",
+    "t": {
+     "en": "Feed reader",
+     "de": "Feedreader",
+     "es": "Lector de feeds",
+     "it": "Lettore di feed",
+     "fr": "Lecteur de flux"
+    },
+    "p": {
+     "en": "The newest articles, reloading by themselves.",
+     "de": "Die neuesten Artikel, die sich selbst nachladen.",
+     "es": "Los artículos más recientes, que se recargan solos.",
+     "it": "Gli articoli più recenti, che si ricaricano da soli.",
+     "fr": "Les articles les plus récents, rechargés automatiquement."
+    }
+   },
+   {
+    "id": "headlines",
+    "t": {
+     "en": "Headlines",
+     "de": "Schlagzeilen",
+     "es": "Titulares",
+     "it": "Titoli",
+     "fr": "Titres"
+    },
+    "p": {
+     "en": "One headline after the other, with the time.",
+     "de": "Eine Schlagzeile nach der anderen, mit Uhrzeit.",
+     "es": "Un titular tras otro, con la hora.",
+     "it": "Un titolo dopo l'altro, con l'ora.",
+     "fr": "Un titre après l'autre, avec l'heure."
+    }
+   }
+  ],
+  "install": [
+   {
+    "t": {
+     "en": "Install",
+     "de": "Installieren",
+     "es": "Instalar",
+     "it": "Installa",
+     "fr": "Installer"
+    },
+    "p": {
+     "en": "With Homebrew: <code>brew install pepperonas/tap/wallstreet</code> brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into <code>~/.local</code> and names what is missing.",
+     "de": "Mit Homebrew: <code>brew install pepperonas/tap/wallstreet</code> bringt wallstreet und die Programme mit, die seine Fenster brauchen. Ohne Homebrew legt das Installationsskript aus dem Download es nach <code>~/.local</code> und nennt, was fehlt.",
+     "es": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> trae wallstreet y los programas que usan sus paneles. Sin Homebrew, el script de instalación de la descarga lo coloca en <code>~/.local</code> e indica lo que falta.",
+     "it": "Con Homebrew: <code>brew install pepperonas/tap/wallstreet</code> porta wallstreet e i programmi usati dai suoi riquadri. Senza Homebrew, lo script di installazione del download lo mette in <code>~/.local</code> e indica cosa manca.",
+     "fr": "Avec Homebrew : <code>brew install pepperonas/tap/wallstreet</code> installe wallstreet et les programmes dont ses panneaux ont besoin. Sans Homebrew, le script d'installation du téléchargement le place dans <code>~/.local</code> et indique ce qui manque."
+    }
+   },
+   {
+    "t": {
+     "en": "Run",
+     "de": "Starten",
+     "es": "Ejecutar",
+     "it": "Avvia",
+     "fr": "Lancer"
+    },
+    "p": {
+     "en": "Type <code>wallstreet</code> in a terminal — the wider the window, the more panes. <code>wallstreet --demo</code> shows invented data instead of the day's news.",
+     "de": "<code>wallstreet</code> im Terminal eingeben — je breiter das Fenster, desto mehr Fenster darin. <code>wallstreet --demo</code> zeigt erfundene Daten statt der Tagesnachrichten.",
+     "es": "Escribe <code>wallstreet</code> en un terminal: cuanto más ancha la ventana, más paneles. <code>wallstreet --demo</code> muestra datos inventados en lugar de las noticias del día.",
+     "it": "Scrivi <code>wallstreet</code> in un terminale: più larga è la finestra, più riquadri compaiono. <code>wallstreet --demo</code> mostra dati inventati invece delle notizie del giorno.",
+     "fr": "Tapez <code>wallstreet</code> dans un terminal : plus la fenêtre est large, plus il y a de panneaux. <code>wallstreet --demo</code> affiche des données inventées au lieu des nouvelles du jour."
+    }
+   },
+   {
+    "t": {
+     "en": "Quit",
+     "de": "Beenden",
+     "es": "Salir",
+     "it": "Esci",
+     "fr": "Quitter"
+    },
+    "p": {
+     "en": "Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.",
+     "de": "Strg-C in einem beliebigen Fenster drücken. Das Fenster schließt sich, die von wallstreet gestartete tmux-Sitzung endet, und du bist zurück an der Eingabezeile.",
+     "es": "Pulsa Ctrl-C en cualquier panel. La ventana se cierra, la sesión de tmux que inició wallstreet termina y vuelves a tu línea de comandos.",
+     "it": "Premi Ctrl-C in un riquadro qualsiasi. La finestra si chiude, la sessione tmux avviata da wallstreet termina e torni al prompt.",
+     "fr": "Appuyez sur Ctrl-C dans n'importe quel panneau. La fenêtre se ferme, la session tmux lancée par wallstreet se termine et vous retrouvez votre invite."
+    }
+   }
+  ],
+  "v.p": {
+   "en": "The installer script compares the archive with this checksum before it installs anything.",
+   "de": "Das Installationsskript vergleicht das Archiv mit dieser Prüfsumme, bevor es etwas installiert.",
+   "es": "El script de instalación compara el archivo con esta suma de comprobación antes de instalar nada.",
+   "it": "Lo script di installazione confronta l'archivio con questo checksum prima di installare qualcosa.",
+   "fr": "Le script d'installation compare l'archive à cette somme de contrôle avant d'installer quoi que ce soit."
+  },
+  "i.note": {
+   "en": "The pictures on this page are taken in demo mode: the companies and headlines in them are invented. wallstreet is a display, not financial advice.",
+   "de": "Die Bilder auf dieser Seite sind im Demo-Modus entstanden: Firmen und Schlagzeilen darin sind erfunden. wallstreet ist eine Anzeige, keine Anlageberatung.",
+   "es": "Las imágenes de esta página están tomadas en modo demo: las empresas y los titulares son inventados. wallstreet es una pantalla, no asesoramiento financiero.",
+   "it": "Le immagini di questa pagina sono fatte in modalità demo: aziende e titoli sono inventati. wallstreet è una visualizzazione, non una consulenza finanziaria.",
+   "fr": "Les images de cette page sont prises en mode démo : les entreprises et les titres y sont inventés. wallstreet est un affichage, pas un conseil financier."
+  },
+  "faq": [
+   {
+    "q": {
+     "en": "Is wallstreet free?",
+     "de": "Ist wallstreet kostenlos?",
+     "es": "¿wallstreet es gratis?",
+     "it": "wallstreet è gratuito?",
+     "fr": "wallstreet est-il gratuit ?"
+    },
+    "a": {
+     "en": "Yes. It is open source under the Apache-2.0 licence, without ads, accounts or telemetry, and it needs no paid data subscription. The original was written by Dustin Kirkland as part of hollywood.",
+     "de": "Ja. Es ist Open Source unter der Apache-2.0-Lizenz, ohne Werbung, Konto oder Telemetrie, und braucht kein bezahltes Datenabo. Das Original stammt von Dustin Kirkland und war Teil von hollywood.",
+     "es": "Sí. Es de código abierto bajo la licencia Apache-2.0, sin anuncios, cuentas ni telemetría, y no necesita ninguna suscripción de datos de pago. El original lo escribió Dustin Kirkland como parte de hollywood.",
+     "it": "Sì. È open source con licenza Apache-2.0, senza pubblicità, account o telemetria, e non richiede abbonamenti a dati a pagamento. L'originale è stato scritto da Dustin Kirkland come parte di hollywood.",
+     "fr": "Oui. Il est open source sous licence Apache-2.0, sans publicité, compte ni télémétrie, et ne demande aucun abonnement payant à des données. L'original a été écrit par Dustin Kirkland dans le cadre de hollywood."
+    }
+   },
+   {
+    "q": {
+     "en": "Where do the numbers come from?",
+     "de": "Woher kommen die Zahlen?",
+     "es": "¿De dónde salen las cifras?",
+     "it": "Da dove vengono i numeri?",
+     "fr": "D'où viennent les chiffres ?"
+    },
+    "a": {
+     "en": "From the market-movers interface of nasdaq.com: the most active, rising and falling stocks of the trading day. Outside trading hours the last close stays on screen. They are for looking at, not for trading.",
+     "de": "Von der Marktbewegungs-Schnittstelle von nasdaq.com: die meistgehandelten, steigenden und fallenden Aktien des Handelstags. Außerhalb der Handelszeiten bleibt der letzte Schlussstand stehen. Sie sind zum Ansehen gedacht, nicht zum Handeln.",
+     "es": "De la interfaz de movimientos de mercado de nasdaq.com: las acciones más negociadas, las que suben y las que bajan en la jornada. Fuera del horario de mercado se mantiene el último cierre. Son para mirar, no para operar.",
+     "it": "Dall'interfaccia dei movimenti di mercato di nasdaq.com: le azioni più scambiate, in rialzo e in ribasso della giornata. Fuori dall'orario di contrattazione resta l'ultima chiusura. Sono da guardare, non per fare trading.",
+     "fr": "De l'interface des mouvements de marché de nasdaq.com : les actions les plus échangées, en hausse et en baisse de la séance. En dehors des heures de cotation, la dernière clôture reste affichée. Ils sont faits pour être regardés, pas pour négocier."
+    }
+   },
+   {
+    "q": {
+     "en": "What does it need?",
+     "de": "Was wird gebraucht?",
+     "es": "¿Qué necesita?",
+     "it": "Di cosa ha bisogno?",
+     "fr": "De quoi a-t-il besoin ?"
+    },
+    "a": {
+     "en": "macOS or Linux, <code>tmux</code> and Python 3.9 or newer. The feed reader needs <code>newsboat</code>, the picture <code>img2txt</code> from libcaca; without them those two panes stay away. Homebrew installs all of it.",
+     "de": "macOS oder Linux, <code>tmux</code> und Python 3.9 oder neuer. Der Feedreader braucht <code>newsboat</code>, das Bild <code>img2txt</code> aus libcaca; ohne sie bleiben diese beiden Fenster weg. Homebrew installiert alles mit.",
+     "es": "macOS o Linux, <code>tmux</code> y Python 3.9 o posterior. El lector de feeds necesita <code>newsboat</code> y la imagen <code>img2txt</code> de libcaca; sin ellos, esos dos paneles no aparecen. Homebrew lo instala todo.",
+     "it": "macOS o Linux, <code>tmux</code> e Python 3.9 o successivo. Il lettore di feed richiede <code>newsboat</code>, l'immagine <code>img2txt</code> di libcaca; senza di essi quei due riquadri non compaiono. Homebrew installa tutto.",
+     "fr": "macOS ou Linux, <code>tmux</code> et Python 3.9 ou plus récent. Le lecteur de flux demande <code>newsboat</code>, l'image <code>img2txt</code> de libcaca ; sans eux, ces deux panneaux n'apparaissent pas. Homebrew installe le tout."
+    }
+   },
+   {
+    "q": {
+     "en": "How do I update?",
+     "de": "Wie aktualisiere ich?",
+     "es": "¿Cómo actualizo?",
+     "it": "Come aggiorno?",
+     "fr": "Comment mettre à jour ?"
+    },
+    "a": {
+     "en": "With Homebrew: <code>brew upgrade wallstreet</code>. Otherwise run the installer script again; it replaces the installed copy with the newest release.",
+     "de": "Mit Homebrew: <code>brew upgrade wallstreet</code>. Sonst das Installationsskript erneut ausführen; es ersetzt die installierte Kopie durch das neueste Release.",
+     "es": "Con Homebrew: <code>brew upgrade wallstreet</code>. Si no, ejecuta de nuevo el script de instalación; sustituye la copia instalada por la versión más reciente.",
+     "it": "Con Homebrew: <code>brew upgrade wallstreet</code>. Altrimenti esegui di nuovo lo script di installazione; sostituisce la copia installata con la versione più recente.",
+     "fr": "Avec Homebrew : <code>brew upgrade wallstreet</code>. Sinon, relancez le script d'installation ; il remplace la copie installée par la dernière version."
+    }
+   },
+   {
+    "q": {
+     "en": "Can I follow my own stocks or other news?",
+     "de": "Kann ich eigenen Aktien oder anderen Nachrichten folgen?",
+     "es": "¿Puedo seguir mis propias acciones u otras noticias?",
+     "it": "Posso seguire le mie azioni o altre notizie?",
+     "fr": "Puis-je suivre mes propres actions ou d'autres nouvelles ?"
+    },
+    "a": {
+     "en": "Other news: yes — the file <code>newsboat.urls</code> lists the feeds, one per line. Your own stocks: no. The table shows the day's market movers; a watch list is not part of wallstreet.",
+     "de": "Andere Nachrichten: ja — die Datei <code>newsboat.urls</code> führt die Feeds auf, einen je Zeile. Eigene Aktien: nein. Die Tabelle zeigt die Marktbewegungen des Tages; eine Beobachtungsliste gehört nicht zu wallstreet.",
+     "es": "Otras noticias: sí; el archivo <code>newsboat.urls</code> contiene los feeds, uno por línea. Tus propias acciones: no. La tabla muestra los movimientos del día; una lista de seguimiento no forma parte de wallstreet.",
+     "it": "Altre notizie: sì; il file <code>newsboat.urls</code> elenca i feed, uno per riga. Le tue azioni: no. La tabella mostra i movimenti di mercato del giorno; una watch list non fa parte di wallstreet.",
+     "fr": "D'autres nouvelles : oui ; le fichier <code>newsboat.urls</code> liste les flux, un par ligne. Vos propres actions : non. Le tableau montre les mouvements du jour ; une liste de suivi ne fait pas partie de wallstreet."
+    }
+   },
+   {
+    "q": {
+     "en": "Is the download genuine?",
+     "de": "Ist der Download echt?",
+     "es": "¿Es auténtica la descarga?",
+     "it": "Il download è autentico?",
+     "fr": "Le téléchargement est-il authentique ?"
+    },
+    "a": {
+     "en": "Every release is built by GitHub Actions from the tagged source. This page shows the SHA-256 of each file; compare it with <code>shasum -a 256</code>, or let the installer script do it.",
+     "de": "Jedes Release wird von GitHub Actions aus dem getaggten Quelltext gebaut. Diese Seite zeigt die SHA-256 jeder Datei; vergleiche sie mit <code>shasum -a 256</code> oder überlasse es dem Installationsskript.",
+     "es": "Cada versión la compila GitHub Actions a partir del código etiquetado. Esta página muestra el SHA-256 de cada archivo; compáralo con <code>shasum -a 256</code> o deja que lo haga el script de instalación.",
+     "it": "Ogni versione è costruita da GitHub Actions dal sorgente etichettato. Questa pagina mostra lo SHA-256 di ogni file; confrontalo con <code>shasum -a 256</code> o lascia che lo faccia lo script di installazione.",
+     "fr": "Chaque version est construite par GitHub Actions à partir du code source étiqueté. Cette page affiche le SHA-256 de chaque fichier ; comparez-le avec <code>shasum -a 256</code> ou laissez le script d'installation s'en charger."
+    }
+   }
+  ]
+ }
+}

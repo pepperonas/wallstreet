@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- nginx SSI: fallbacks for the release facts pulled in below (must precede their first use). -->
+  <!--# block name="none" --><!--# endblock -->
+  <!--# block name="dash" -->—<!--# endblock -->
+  <!--# block name="meta_fallback" -->Newest release · macOS and Linux · free, Apache-2.0<!--# endblock -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>wallstreet — Live Stock Tickers for Your Terminal</title>
+  <meta name="description" content="Free, open-source market screen for the terminal: live quotes, gainers and losers tickers, headlines and a feed reader in tmux. macOS and Linux.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="author" content="Martin Pfeffer">
+  <meta name="application-name" content="wallstreet">
+  <meta name="apple-mobile-web-app-title" content="wallstreet">
+  <meta name="theme-color" content="#0c0d13">
+  <meta name="color-scheme" content="dark">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://wallstreet.celox.io/">
+  <link rel="icon" href="assets/mark.svg?v=1" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=1">
+  <link rel="preload" as="image" type="image/webp" imagesrcset="assets/hero-1400.webp?v=1 1400w, assets/hero-2400.webp?v=1 2400w" imagesizes="100vw">
+  <!-- For agents and tools: machine-readable facts about the app and its newest release. -->
+  <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/json">
+  <link rel="alternate" type="text/markdown" href="/llms.txt" title="wallstreet for LLMs and agents">
+  <link rel="alternate" type="text/markdown" href="/index.md" title="This page as Markdown">
+  <link rel="alternate" type="text/markdown" href="/changelog.md" title="Changelog (Markdown)">
+  <link rel="alternate" type="application/json" href="/latest.json" title="Newest release (version, files, sizes, SHA-256)">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="wallstreet">
+  <meta property="og:url" content="https://wallstreet.celox.io/">
+  <meta property="og:title" content="wallstreet — the trading floor, in your terminal.">
+  <meta property="og:description" content="Live quotes, three tickers, headlines and press photos as ASCII art, in one terminal window. Free, open source, no API key, with a demo mode.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:image" content="https://wallstreet.celox.io/assets/og.jpg?v=1">
+  <meta property="og:image:secure_url" content="https://wallstreet.celox.io/assets/og.jpg?v=1">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A terminal with a table of stock quotes, a feed reader, a chart as ASCII art and three tickers for gainers, losers and headlines">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="wallstreet — the trading floor, in your terminal.">
+  <meta name="twitter:description" content="Live quotes, tickers and headlines in one terminal window. Free, open source, macOS and Linux.">
+  <meta name="twitter:image" content="https://wallstreet.celox.io/assets/og.jpg?v=1">
+  <meta name="twitter:image:alt" content="A terminal with a table of stock quotes, a feed reader, a chart as ASCII art and three tickers for gainers, losers and headlines">
+
+  <script type="application/ld+json">
+[
+ {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://wallstreet.celox.io/#app",
+  "name": "wallstreet",
+  "description": "wallstreet is a free, open-source (Apache-2.0) program that turns a terminal into a trading-desk screen with tmux: a table of the most active stocks, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. The quotes come from the Nasdaq market-movers API without an API key, the news from RSS feeds of BBC, CNBC, MarketWatch and the WSJ. A demo mode shows invented companies and headlines without any network request. It began as the sister program of Dustin Kirkland's hollywood and was rebuilt with data sources that answer; it runs on macOS and Linux and needs Python 3 and tmux.",
+  "url": "https://wallstreet.celox.io/",
+  "image": "https://wallstreet.celox.io/assets/og.jpg?v=1",
+  "operatingSystem": "macOS, Linux",
+  "applicationCategory": "FinanceApplication",
+  "downloadUrl": "https://wallstreet.celox.io/download",
+  "installUrl": "https://wallstreet.celox.io/download",
+  "releaseNotes": "https://github.com/pepperonas/wallstreet/releases/latest",
+  "softwareHelp": {
+   "@type": "CreativeWork",
+   "url": "https://wallstreet.celox.io/#install"
+  },
+  "softwareVersion": "<!--# include virtual='/ssi/version.txt' stub='none' -->",
+  "fileSize": "<!--# include virtual='/ssi/size.txt' stub='none' -->",
+  "dateModified": "<!--# include virtual='/ssi/date.txt' stub='none' -->",
+  "inLanguage": [
+   "en",
+   "de",
+   "es",
+   "it",
+   "fr"
+  ],
+  "isAccessibleForFree": true,
+  "offers": {
+   "@type": "Offer",
+   "price": "0",
+   "priceCurrency": "EUR",
+   "availability": "https://schema.org/InStock"
+  },
+  "license": "https://opensource.org/licenses/Apache-2.0",
+  "sameAs": [
+   "https://github.com/pepperonas/wallstreet"
+  ],
+  "featureList": [
+   "Quote table: most active stocks, Nasdaq-100 movers, advancers and decliners with price, change and percent",
+   "Three tickers: gainers in green, losers in red, headlines in yellow",
+   "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
+   "Data without an API key or an account: Nasdaq market movers and public RSS feeds",
+   "Demo mode with invented companies and headlines, no network request",
+   "Layout follows the terminal width; the table redraws when its pane is resized",
+   "Short-lived private cache: several panes share one request, the last good state survives a network failure",
+   "Text from the network is stripped of control characters before it is printed",
+   "Runs on macOS and Linux; Python standard library only"
+  ],
+  "author": {
+   "@type": "Person",
+   "name": "Martin Pfeffer",
+   "url": "https://celox.io"
+  },
+  "publisher": {
+   "@type": "Organization",
+   "name": "celox.io",
+   "url": "https://celox.io"
+  },
+  "applicationSubCategory": "Terminal market screen",
+  "screenshot": [
+   "https://wallstreet.celox.io/assets/gallery/wallstreet.jpg?v=1",
+   "https://wallstreet.celox.io/assets/gallery/table.jpg?v=1",
+   "https://wallstreet.celox.io/assets/gallery/newsboat.jpg?v=1",
+   "https://wallstreet.celox.io/assets/gallery/headlines.jpg?v=1"
+  ]
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to install wallstreet",
+  "totalTime": "PT2M",
+  "step": [
+   {
+    "@type": "HowToStep",
+    "position": 1,
+    "name": "Install",
+    "text": "With Homebrew: brew install pepperonas/tap/wallstreet brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into ~/.local and names what is missing.",
+    "url": "https://wallstreet.celox.io/download"
+   },
+   {
+    "@type": "HowToStep",
+    "position": 2,
+    "name": "Run",
+    "text": "Type wallstreet in a terminal — the wider the window, the more panes. wallstreet --demo shows invented data instead of the day's news."
+   },
+   {
+    "@type": "HowToStep",
+    "position": 3,
+    "name": "Quit",
+    "text": "Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt."
+   }
+  ]
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "Is wallstreet free?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Yes. It is open source under the Apache-2.0 licence, without ads, accounts or telemetry, and it needs no paid data subscription. The original was written by Dustin Kirkland as part of hollywood."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Where do the numbers come from?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "From the market-movers interface of nasdaq.com: the most active, rising and falling stocks of the trading day. Outside trading hours the last close stays on screen. They are for looking at, not for trading."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "What does it need?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "macOS or Linux, tmux and Python 3.9 or newer. The feed reader needs newsboat, the picture img2txt from libcaca; without them those two panes stay away. Homebrew installs all of it."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "How do I update?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "With Homebrew: brew upgrade wallstreet. Otherwise run the installer script again; it replaces the installed copy with the newest release."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Can I follow my own stocks or other news?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Other news: yes — the file newsboat.urls lists the feeds, one per line. Your own stocks: no. The table shows the day's market movers; a watch list is not part of wallstreet."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Is the download genuine?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Every release is built by GitHub Actions from the tagged source. This page shows the SHA-256 of each file; compare it with shasum -a 256, or let the installer script do it."
+    }
+   }
+  ]
+ }
+]
+  </script>
+
+  <link rel="stylesheet" href="styles.css?v=1">
+  <script src="i18n.js?v=1" defer></script>
+  <script src="app.js?v=1" defer></script>
+  <script src="changelog.js?v=1" defer></script>
+  <script src="webmcp.js?v=1" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+  <header class="bar">
+    <a class="brand" href="#top" aria-label="wallstreet">
+      <img src="assets/mark.svg?v=1" alt="" width="28" height="28">
+      <span>wallstreet</span>
+    </a>
+    <nav class="bar-links" aria-label="Main">
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#install" data-i18n="nav.install">Install</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
+      <a href="#support" data-i18n="nav.support">Support</a>
+      <a class="gh" href="https://github.com/pepperonas/wallstreet" target="_blank" rel="noopener noreferrer" aria-label="Source code on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+      <div class="lang" id="lang">
+        <button class="lang-btn" id="lang-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
+          <span class="flag flag-en" id="lang-flag" aria-hidden="true"></span>
+          <span class="lang-code" id="lang-code">EN</span>
+          <svg class="lang-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="lang-menu" id="lang-menu" role="listbox" aria-label="Language" tabindex="-1" hidden>
+          <li role="option" id="lang-en" data-lang="en" aria-selected="false"><span class="flag flag-en" aria-hidden="true"></span><span class="lang-name">English</span><svg class="lang-check" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.55 17.6 4.4 12.45l1.4-1.4 3.75 3.75 8.65-8.65 1.4 1.4Z"/></svg></li>
+          <li role="option" id="lang-de" data-lang="de" aria-selected="false"><span class="flag flag-de" aria-hidden="true"></span><span class="lang-name">Deutsch</span><svg class="lang-check" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.55 17.6 4.4 12.45l1.4-1.4 3.75 3.75 8.65-8.65 1.4 1.4Z"/></svg></li>
+          <li role="option" id="lang-es" data-lang="es" aria-selected="false"><span class="flag flag-es" aria-hidden="true"></span><span class="lang-name">Español</span><svg class="lang-check" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.55 17.6 4.4 12.45l1.4-1.4 3.75 3.75 8.65-8.65 1.4 1.4Z"/></svg></li>
+          <li role="option" id="lang-it" data-lang="it" aria-selected="false"><span class="flag flag-it" aria-hidden="true"></span><span class="lang-name">Italiano</span><svg class="lang-check" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.55 17.6 4.4 12.45l1.4-1.4 3.75 3.75 8.65-8.65 1.4 1.4Z"/></svg></li>
+          <li role="option" id="lang-fr" data-lang="fr" aria-selected="false"><span class="flag flag-fr" aria-hidden="true"></span><span class="lang-name">Français</span><svg class="lang-check" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9.55 17.6 4.4 12.45l1.4-1.4 3.75 3.75 8.65-8.65 1.4 1.4Z"/></svg></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <picture class="hero-bg" aria-hidden="true">
+        <source type="image/webp" sizes="100vw"
+                srcset="assets/hero-1400.webp?v=1 1400w, assets/hero-2400.webp?v=1 2400w">
+        <img src="assets/hero.jpg?v=1" alt="" width="2912" height="1440" fetchpriority="high">
+      </picture>
+      <div class="hero-scrim" aria-hidden="true"></div>
+
+      <div class="hero-content">
+        <p class="kicker" data-i18n="hero.kicker">Terminal · Open source · Free</p>
+        <h1 data-i18n="hero.title">The trading floor, <br>in your terminal.</h1>
+        <p class="lead" data-i18n="hero.lead">wallstreet turns one terminal window into a trading-desk screen: live quotes, three tickers for gainers, losers and headlines, a feed reader and press photos as ASCII art. No API key, no account — and a demo mode when the news should not be real.</p>
+
+        <div class="cta">
+          <a class="btn primary" id="dl" href="/download" aria-describedby="dl-meta">
+            <svg viewBox="18 18 72 72" aria-hidden="true"><use href="#glyph-dl"/></svg>
+            <span id="dl-label" data-i18n="dl.unix">Download for macOS and Linux</span>
+          </a>
+          <a class="btn tonal" href="https://github.com/pepperonas/wallstreet" data-i18n="hero.source" target="_blank" rel="noopener noreferrer">Source code</a>
+        </div>
+        <p class="meta" id="dl-meta"><span><!--# include virtual="/ssi/meta.html" stub="meta_fallback" --></span></p>
+        <ul class="dl-others" id="dl-others" data-i18n-aria="dl.others" aria-label="Other platforms"><!--# include virtual="/ssi/others.html" stub="none" --></ul>
+      </div>
+    </section>
+
+    <section class="platforms" aria-labelledby="pl-h">
+      <h2 id="pl-h" class="sr" data-i18n="pl.h">Runs where tmux runs</h2>
+      <ul>
+        <li class="chip-0">macOS</li>
+        <li class="chip-1">Linux</li>
+        <li class="chip-2">tmux</li>
+        <li class="chip-3">Homebrew</li>
+      </ul>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="f-h">
+      <h2 id="f-h" data-i18n="f.h">Real numbers. Real news. One window.</h2>
+      <div class="grid">
+        <article class="card">
+          <h3 data-i18n="f1.t">The quote table</h3>
+          <p data-i18n="f1.p">The most active stocks, the Nasdaq-100 movers, advancers and decliners — symbol, name, last price, change and percent, green for up and red for down. It redraws every minute and never prints more rows than fit.</p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="f2.t">Three tickers</h3>
+          <p data-i18n="f2.p">Across the bottom of the window: the day's biggest gainers in green, the biggest losers in red and the headlines of all feeds in yellow, each scrolling at its own pace.</p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="f3.t">News beside the numbers</h3>
+          <p data-i18n="f3.p">A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.</p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="f4.t">No key, no account</h3>
+          <p data-i18n="f4.p">The quotes come from the Nasdaq market-movers interface, the news from public RSS feeds of BBC, CNBC, MarketWatch and the WSJ. Nothing to register, nothing to configure, and wallstreet itself collects nothing.</p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="f5.t">A demo mode for the camera</h3>
+          <p data-i18n="f5.p"><code>wallstreet --demo</code> shows twenty companies that do not exist, prices that drift every minute and invented headlines. Nothing is fetched — for presentations, screenshots, a film set or a machine without a network.</p>
+        </article>
+        <article class="card">
+          <h3 data-i18n="f6.t">Careful with what the network sends</h3>
+          <p data-i18n="f6.p">Headlines and company names are stripped of control characters before they reach your terminal. Pictures are loaded over http(s) from public hosts only, and the cache is a folder that only you can write to.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section gallery" aria-labelledby="s-h">
+      <h2 id="s-h" data-i18n="s.h">What it looks like</h2>
+      <div class="shot-grid">
+        <figure class="shot">
+          <button type="button" class="shot-open" data-shot="wallstreet" data-i18n-aria="g.zoom" aria-label="Enlarge">
+            <picture>
+              <source srcset="assets/gallery/wallstreet.webp?v=1" type="image/webp">
+              <img src="assets/gallery/wallstreet.jpg?v=1" width="1120" height="800" loading="lazy" decoding="async"
+                   data-i18n-alt="g1.t" alt="The whole screen">
+            </picture>
+          </button>
+          <figcaption><h3 data-i18n="g1.t">The whole screen</h3><p data-i18n="g1.p">Quotes, feed reader, picture and three tickers — here in demo mode.</p></figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="shot-open" data-shot="table" data-i18n-aria="g.zoom" aria-label="Enlarge">
+            <picture>
+              <source srcset="assets/gallery/table.webp?v=1" type="image/webp">
+              <img src="assets/gallery/table.jpg?v=1" width="1120" height="800" loading="lazy" decoding="async"
+                   data-i18n-alt="g2.t" alt="Quote table">
+            </picture>
+          </button>
+          <figcaption><h3 data-i18n="g2.t">Quote table</h3><p data-i18n="g2.p">Four sections, fitted to the height of the pane.</p></figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="shot-open" data-shot="newsboat" data-i18n-aria="g.zoom" aria-label="Enlarge">
+            <picture>
+              <source srcset="assets/gallery/newsboat.webp?v=1" type="image/webp">
+              <img src="assets/gallery/newsboat.jpg?v=1" width="1120" height="800" loading="lazy" decoding="async"
+                   data-i18n-alt="g3.t" alt="Feed reader">
+            </picture>
+          </button>
+          <figcaption><h3 data-i18n="g3.t">Feed reader</h3><p data-i18n="g3.p">The newest articles, reloading by themselves.</p></figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="shot-open" data-shot="headlines" data-i18n-aria="g.zoom" aria-label="Enlarge">
+            <picture>
+              <source srcset="assets/gallery/headlines.webp?v=1" type="image/webp">
+              <img src="assets/gallery/headlines.jpg?v=1" width="1120" height="800" loading="lazy" decoding="async"
+                   data-i18n-alt="g4.t" alt="Headlines">
+            </picture>
+          </button>
+          <figcaption><h3 data-i18n="g4.t">Headlines</h3><p data-i18n="g4.p">One headline after the other, with the time.</p></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="install" aria-labelledby="i-h">
+      <h2 id="i-h" data-i18n="i.h">Install in three steps</h2>
+      <ol class="steps">
+        <li class="card">
+          <span class="num">1</span>
+          <h3 data-i18n="i1.t">Install</h3>
+          <p data-i18n="i1.p">With Homebrew: <code>brew install pepperonas/tap/wallstreet</code> brings wallstreet and the programs its panes use. Without Homebrew, the installer script from the download puts it into <code>~/.local</code> and names what is missing.</p>
+        </li>
+        <li class="card">
+          <span class="num">2</span>
+          <h3 data-i18n="i2.t">Run</h3>
+          <p data-i18n="i2.p">Type <code>wallstreet</code> in a terminal — the wider the window, the more panes. <code>wallstreet --demo</code> shows invented data instead of the day's news.</p>
+        </li>
+        <li class="card">
+          <span class="num">3</span>
+          <h3 data-i18n="i3.t">Quit</h3>
+          <p data-i18n="i3.p">Press Ctrl-C in any pane. The window closes, the tmux session that wallstreet started ends, and you are back at your prompt.</p>
+        </li>
+      </ol>
+
+      <div class="card verify" id="verify">
+        <h3 data-i18n="v.h">Check what you downloaded</h3>
+        <dl class="checksums" id="checksums"><!--# include virtual="/ssi/checksums.html" stub="none" --></dl>
+        <dl>
+        </dl>
+        <p class="small" data-i18n="v.p">The installer script compares the archive with this checksum before it installs anything.</p>
+      </div>
+
+      <p class="note" data-i18n="i.note">The pictures on this page are taken in demo mode: the companies and headlines in them are invented. wallstreet is a display, not financial advice.</p>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-h">
+      <h2 id="faq-h" data-i18n="faq.h">Questions</h2>
+      <div class="faq">
+        <details class="faq-item">
+          <summary data-i18n="faq.q1">Is wallstreet free?</summary>
+          <p data-i18n="faq.q1a">Yes. It is open source under the Apache-2.0 licence, without ads, accounts or telemetry, and it needs no paid data subscription. The original was written by Dustin Kirkland as part of hollywood.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q2">Where do the numbers come from?</summary>
+          <p data-i18n="faq.q2a">From the market-movers interface of nasdaq.com: the most active, rising and falling stocks of the trading day. Outside trading hours the last close stays on screen. They are for looking at, not for trading.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q3">What does it need?</summary>
+          <p data-i18n="faq.q3a">macOS or Linux, <code>tmux</code> and Python 3.9 or newer. The feed reader needs <code>newsboat</code>, the picture <code>img2txt</code> from libcaca; without them those two panes stay away. Homebrew installs all of it.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q4">How do I update?</summary>
+          <p data-i18n="faq.q4a">With Homebrew: <code>brew upgrade wallstreet</code>. Otherwise run the installer script again; it replaces the installed copy with the newest release.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q5">Can I follow my own stocks or other news?</summary>
+          <p data-i18n="faq.q5a">Other news: yes — the file <code>newsboat.urls</code> lists the feeds, one per line. Your own stocks: no. The table shows the day's market movers; a watch list is not part of wallstreet.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q6">Is the download genuine?</summary>
+          <p data-i18n="faq.q6a">Every release is built by GitHub Actions from the tagged source. This page shows the SHA-256 of each file; compare it with <code>shasum -a 256</code>, or let the installer script do it.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="section" id="support" aria-labelledby="sp-h">
+      <div class="support">
+        <div class="support-text">
+          <h2 id="sp-h" data-i18n="sp.h">Like the app?</h2>
+          <p data-i18n="sp.p">wallstreet is free, has no ads and stays that way. A small donation keeps it maintained — and a review of celox.io on Google helps just as much.</p>
+        </div>
+        <div class="support-actions">
+          <a class="btn paypal" href="https://www.paypal.com/donate/?business=martin.pfeffer@celox.io&amp;currency_code=EUR&amp;item_name=wallstreet" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7.016 19.198h-4.2a.562.562 0 0 1-.555-.65L5.093.584A.692.692 0 0 1 5.776 0h7.222c3.417 0 5.904 2.488 5.846 5.5-.006.25-.027.5-.066.747A6.794 6.794 0 0 1 12.071 12H8.743a.69.69 0 0 0-.682.583l-.325 2.056-.013.083-.692 4.39-.015.087zM19.79 6.142c-.01.087-.01.175-.023.261a7.76 7.76 0 0 1-7.695 6.598H9.007l-.283 1.795-.013.083-.692 4.39-.134.843-.014.088H6.86l-.497 3.15a.562.562 0 0 0 .555.65h3.94a.692.692 0 0 0 .683-.584l.989-6.272a.692.692 0 0 1 .683-.584h2.07a7.76 7.76 0 0 0 7.664-6.566 4.806 4.806 0 0 0-1.92-4.673z"/></svg>
+            <span data-i18n="sp.donate">Donate with PayPal</span>
+          </a>
+          <a class="btn review" href="https://g.page/r/CXgdRV3QysvxEBM/review" target="_blank" rel="noopener noreferrer">
+            <span class="stars" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#glyph-star"/></svg><svg viewBox="0 0 24 24"><use href="#glyph-star"/></svg><svg viewBox="0 0 24 24"><use href="#glyph-star"/></svg><svg viewBox="0 0 24 24"><use href="#glyph-star"/></svg><svg viewBox="0 0 24 24"><use href="#glyph-star"/></svg></span>
+            <span data-i18n="sp.review">Rate celox.io on Google</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>© <span id="year">2026</span> Martin Pfeffer · <a href="https://celox.io" target="_blank" rel="noopener noreferrer">celox.io</a></p>
+    <p class="foot-links">
+      <button type="button" class="linklike" id="license-open" aria-haspopup="dialog" data-i18n="ft.license">Apache-2.0 licence</button>
+      <button type="button" class="linklike" id="changelog-open" aria-haspopup="dialog" data-i18n="ft.changelog">Changelog</button>
+      <a href="https://g.page/r/CXgdRV3QysvxEBM/review" rel="noopener noreferrer" data-i18n="ft.review" target="_blank">Rate celox.io</a>
+      <a href="https://celox.io/impressum/" data-i18n="ft.imprint" target="_blank" rel="noopener noreferrer">Imprint</a>
+      <a href="https://celox.io/datenschutz/" data-i18n="ft.privacy" target="_blank" rel="noopener noreferrer">Privacy</a>
+    </p>
+  </footer>
+
+  <dialog class="license" id="license" aria-labelledby="license-title">
+    <div class="license-head">
+      <h2 id="license-title" data-i18n="lic.h">Licence</h2>
+      <button type="button" class="license-close" id="license-close" data-i18n-aria="lic.close" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>
+      </button>
+    </div>
+    <pre class="license-text" tabindex="-1" autofocus>Apache License Version 2.0, January 2004 http://www.apache.org/licenses/
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions.
+
+&quot;License&quot; shall mean the terms and conditions for use, reproduction, and distribution as defined by Sections 1 through 9 of this document.
+
+&quot;Licensor&quot; shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.
+
+&quot;Legal Entity&quot; shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity. For the purposes of this definition, &quot;control&quot; means (i) the power, direct or indirect, to cause the direction or management of such entity, whether by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial ownership of such entity.
+
+&quot;You&quot; (or &quot;Your&quot;) shall mean an individual or Legal Entity exercising permissions granted by this License.
+
+&quot;Source&quot; form shall mean the preferred form for making modifications, including but not limited to software source code, documentation source, and configuration files.
+
+&quot;Object&quot; form shall mean any form resulting from mechanical transformation or translation of a Source form, including but not limited to compiled object code, generated documentation, and conversions to other media types.
+
+&quot;Work&quot; shall mean the work of authorship, whether in Source or Object form, made available under the License, as indicated by a copyright notice that is included in or attached to the work (an example is provided in the Appendix below).
+
+&quot;Derivative Works&quot; shall mean any work, whether in Source or Object form, that is based on (or derived from) the Work and for which the editorial revisions, annotations, elaborations, or other modifications represent, as a whole, an original work of authorship. For the purposes of this License, Derivative Works shall not include works that remain separable from, or merely link (or bind by name) to the interfaces of, the Work and Derivative Works thereof.
+
+&quot;Contribution&quot; shall mean any work of authorship, including the original version of the Work and any modifications or additions to that Work or Derivative Works thereof, that is intentionally submitted to Licensor for inclusion in the Work by the copyright owner or by an individual or Legal Entity authorized to submit on behalf of the copyright owner. For the purposes of this definition, &quot;submitted&quot; means any form of electronic, verbal, or written communication sent to the Licensor or its representatives, including but not limited to communication on electronic mailing lists, source code control systems, and issue tracking systems that are managed by, or on behalf of, the Licensor for the purpose of discussing and improving the Work, but excluding communication that is conspicuously marked or otherwise designated in writing by the copyright owner as &quot;Not a Contribution.&quot;
+
+&quot;Contributor&quot; shall mean Licensor and any individual or Legal Entity on behalf of whom a Contribution has been received by Licensor and subsequently incorporated within the Work.
+
+2. Grant of Copyright License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form.
+
+3. Grant of Patent License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by such Contributor that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work to which such Contribution(s) was submitted. If You institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Work or a Contribution incorporated within the Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.
+
+4. Redistribution. You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions:
+
+(a) You must give any other recipients of the Work or Derivative Works a copy of this License; and
+
+(b) You must cause any modified files to carry prominent notices stating that You changed the files; and
+
+(c) You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices from the Source form of the Work, excluding those notices that do not pertain to any part of the Derivative Works; and
+
+(d) If the Work includes a &quot;NOTICE&quot; text file as part of its distribution, then any Derivative Works that You distribute must include a readable copy of the attribution notices contained within such NOTICE file, excluding those notices that do not pertain to any part of the Derivative Works, in at least one of the following places: within a NOTICE text file distributed as part of the Derivative Works; within the Source form or documentation, if provided along with the Derivative Works; or, within a display generated by the Derivative Works, if and wherever such third-party notices normally appear. The contents of the NOTICE file are for informational purposes only and do not modify the License. You may add Your own attribution notices within Derivative Works that You distribute, alongside or as an addendum to the NOTICE text from the Work, provided that such additional attribution notices cannot be construed as modifying the License.
+
+You may add Your own copyright statement to Your modifications and may provide additional or different license terms and conditions for use, reproduction, or distribution of Your modifications, or for any such Derivative Works as a whole, provided Your use, reproduction, and distribution of the Work otherwise complies with the conditions stated in this License.
+
+5. Submission of Contributions. Unless You explicitly state otherwise, any Contribution intentionally submitted for inclusion in the Work by You to the Licensor shall be under the terms and conditions of this License, without any additional terms or conditions. Notwithstanding the above, nothing herein shall supersede or modify the terms of any separate license agreement you may have executed with Licensor regarding such Contributions.
+
+6. Trademarks. This License does not grant permission to use the trade names, trademarks, service marks, or product names of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and reproducing the content of the NOTICE file.
+
+7. Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License.
+
+8. Limitation of Liability. In no event and under no legal theory, whether in tort (including negligence), contract, or otherwise, unless required by applicable law (such as deliberate and grossly negligent acts) or agreed to in writing, shall any Contributor be liable to You for damages, including any direct, indirect, special, incidental, or consequential damages of any character arising as a result of this License or out of the use or inability to use the Work (including but not limited to damages for loss of goodwill, work stoppage, computer failure or malfunction, or any and all other commercial damages or losses), even if such Contributor has been advised of the possibility of such damages.
+
+9. Accepting Warranty or Additional Liability. While redistributing the Work or Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of support, warranty, indemnity, or other liability obligations and/or rights consistent with this License. However, in accepting such obligations, You may act only on Your own behalf and on Your sole responsibility, not on behalf of any other Contributor, and only if You agree to indemnify, defend, and hold each Contributor harmless for any liability incurred by, or claims asserted against, such Contributor by reason of your accepting any such warranty or additional liability.
+
+END OF TERMS AND CONDITIONS
+
+APPENDIX: How to apply the Apache License to your work.
+
+To apply the Apache License to your work, attach the following boilerplate notice, with the fields enclosed by brackets &quot;[]&quot; replaced with your own identifying information. (Don&#x27;t include the brackets!)  The text should be enclosed in the appropriate comment syntax for the file format. We also recommend that a file or class name and description of purpose be included on the same &quot;printed page&quot; as the copyright notice for easier identification within third-party archives.
+
+Copyright [yyyy] [name of copyright owner]
+
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</pre>
+  </dialog>
+
+  <dialog class="license changelog" id="changelog" aria-labelledby="changelog-title">
+    <div class="license-head">
+      <h2 id="changelog-title" data-i18n="cl.h">Changelog</h2>
+      <a class="cl-source" href="https://github.com/pepperonas/wallstreet/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" data-i18n="cl.source">on GitHub</a>
+      <button type="button" class="license-close" id="changelog-close" data-i18n-aria="lic.close" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>
+      </button>
+    </div>
+    <div class="changelog-body" id="changelog-body" tabindex="-1" autofocus aria-live="polite">
+      <p class="cl-loading" data-i18n="cl.loading">Loading…</p>
+    </div>
+    <p hidden id="changelog-error" data-i18n="cl.error">The changelog could not be loaded. Read it on</p>
+    <p hidden id="changelog-more" data-i18n="cl.more">Older versions</p>
+  </dialog>
+
+  <dialog class="shot-view" id="shot-view" aria-labelledby="shot-view-title">
+    <div class="license-head">
+      <h2 id="shot-view-title"></h2>
+      <button type="button" class="license-close" id="shot-view-close" data-i18n-aria="lic.close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg></button>
+    </div>
+    <picture><source id="shot-view-webp" type="image/webp"><img id="shot-view-img" alt="" width="1120" height="800"></picture>
+    <p id="shot-view-text"></p>
+  </dialog>
+
+  <svg class="defs" width="0" height="0" aria-hidden="true">
+    <defs>
+      <path id="glyph-star" fill="currentColor" d="M12 2.5l2.94 6.2 6.81.8-5.03 4.66 1.33 6.72L12 17.52l-6.05 3.36 1.33-6.72L2.25 9.5l6.81-.8z"/>
+      <path id="glyph-dl" fill="currentColor" d="M49,33h10v17.5h8l-13,12.5-13-12.5h8Z M41.5,68.5h25a3,3 0 0 1 0,6h-25a3,3 0 0 1 0-6Z"/>
+    </defs>
+  </svg>
+</body>
+</html>
