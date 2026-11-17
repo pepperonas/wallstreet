@@ -78,13 +78,17 @@ class Logo(Base):
         _, _, rows = self.ws.png_pixels(png(2, 1, [[(1, 2, 3), (4, 5, 6)]], colour=2))
         self.assertEqual(rows[0], [(1, 2, 3, 255), (4, 5, 6, 255)])
 
-    def test_what_is_not_a_small_png_is_refused(self):
-        huge = png(1, 1, [[self.RED]]).replace(b"\0\0\0\x01\0\0\0\x01", b"\0\x01\0\0\0\x01\0\0", 1)
-        for data in (b"", b"<html>404</html>", self.picture()[:40], huge):
-            with self.assertRaises((ValueError, Exception)):
+    def test_what_is_not_a_png_is_refused(self):
+        for data in (b"", b"<html>404</html>", self.picture()[:40]):
+            with self.assertRaises(Exception):
                 self.ws.png_pixels(data)
+
+    def test_a_picture_larger_than_a_logo_is_refused(self):
+        # complete and valid, only wide: decoding it would cost time and memory
+        wide = png(2000, 1, [[self.RED] * 2000])
         with self.assertRaises(ValueError):
-            self.ws.png_pixels(huge)
+            self.ws.png_pixels(wide)
+        self.assertEqual(self.ws.png_pixels(wide, limit=2000)[0], 2000)
 
     def test_transparent_pixels_show_the_tile(self):
         grid = self.ws.tile(self.ws.png_pixels(self.picture()), 12)
@@ -92,6 +96,19 @@ class Logo(Base):
         self.assertEqual(grid[0][0], self.ws.TILE)            # the margin
         self.assertEqual(grid[6][3], (200, 0, 0))             # the red half
         self.assertEqual(grid[6][8], self.ws.TILE)            # the transparent half
+
+    def test_a_white_logo_gets_a_dark_tile(self):
+        white = (255, 255, 255, 255)
+        grid = self.ws.tile(self.ws.png_pixels(png(8, 8, [[white] * 4 + [self.CLEAR] * 4 for _ in range(8)])), 12)
+        self.assertEqual(grid[0][0], self.ws.TILE_DARK)
+        self.assertEqual(grid[6][8], self.ws.TILE_DARK)
+        self.assertEqual(grid[6][3], (255, 255, 255))
+
+    def test_a_logo_with_a_white_ground_of_its_own_keeps_the_light_tile(self):
+        white, black = (255, 255, 255, 255), (0, 0, 0, 255)
+        rows = [[white] * 8 for _ in range(8)]
+        rows[4][4] = black
+        self.assertEqual(self.ws.tile(self.ws.png_pixels(png(8, 8, rows)), 12)[0][0], self.ws.TILE)
 
     def test_the_pane_is_drawn_with_half_blocks_and_fits(self):
         with mock.patch.object(self.ws, "fetch", return_value=self.picture()):

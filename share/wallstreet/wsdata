@@ -676,6 +676,7 @@ def chart_lines(data, span, cols, lines):
 LOGO_URLS = ("https://financialmodelingprep.com/image-stock/%s.png",
              "https://assets.parqet.com/logos/symbol/%s?format=png")
 TILE = (236, 238, 242)
+TILE_DARK = (30, 32, 42)      # for a logo drawn in white
 FONT = {  # 5 x 7, for the monogram of a company without a logo
     "A": "01110 10001 10001 11111 10001 10001 10001", "B": "11110 10001 10001 11110 10001 10001 11110",
     "C": "01110 10001 10000 10000 10000 10001 01110", "D": "11110 10001 10001 10001 10001 10001 11110",
@@ -767,10 +768,18 @@ def png_pixels(data, limit=1024):
 def tile(image, size, margin=2):
     """The picture, scaled into a SIZE x SIZE tile of (r, g, b) on the tile's ground."""
     width, height, rows = image
+    # a logo made for dark pages would vanish on the light tile: look at what it is drawn in
+    light = weight = 0
+    for row in rows[::max(1, height // 32)]:
+        for r, g, b, a in row[::max(1, width // 32)]:
+            light, weight = light + (299 * r + 587 * g + 114 * b) // 1000 * a, weight + a
+    # ... unless it brings a ground of its own (opaque corners)
+    framed = min(rows[0][0][3], rows[0][-1][3], rows[-1][0][3], rows[-1][-1][3]) > 200
+    ground = TILE_DARK if weight and light / weight > 200 and not framed else TILE
     inner = max(1, size - 2 * margin)
     scale = max(width, height) / float(inner)
     out_w, out_h = max(1, int(round(width / scale))), max(1, int(round(height / scale)))
-    grid = [[TILE] * size for _ in range(size)]
+    grid = [[ground] * size for _ in range(size)]
     off_x, off_y = (size - out_w) // 2, (size - out_h) // 2
     for y in range(out_h):
         for x in range(out_w):
@@ -786,7 +795,7 @@ def tile(image, size, margin=2):
                 continue
             cover = a / (255.0 * n)
             mix = lambda c, ground: int(round((c / a if a else 0) * cover + ground * (1 - cover)))
-            grid[off_y + y][off_x + x] = (mix(r, TILE[0]), mix(g, TILE[1]), mix(b, TILE[2]))
+            grid[off_y + y][off_x + x] = (mix(r, ground[0]), mix(g, ground[1]), mix(b, ground[2]))
     return grid
 
 

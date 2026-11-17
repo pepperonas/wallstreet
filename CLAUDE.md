@@ -9,8 +9,8 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
 
 - `bin/wallstreet` — launcher (bash): session, window, layout by terminal width, `--demo`.
 - `lib/wallstreet/*` — one script per pane: `quotes` (interactive, `wsdata browse`),
-  `chart` (`wsdata chart`), `ticker`, `newsboat`, `img2txt`,
-  plus `headlines` and `jp2a` (not in the default layout).
+  `chart` (`wsdata chart`), `logo` (`wsdata logo`), `ticker`, `newsboat`,
+  plus `headlines`, `img2txt` and `jp2a` (not in the default layout).
 - `share/wallstreet/wsdata` — **the only place that touches the network.** Python 3.9+,
   standard library only. Commands: `browse`, `chart`, `table`, `movers up|down`,
   `headlines`, `image`, `marquee`, `cachedir`, `demofeed`.
@@ -58,6 +58,19 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
   result `y - 3`, and a test reads the position off the rendered view.
 - A lone ESC is the Escape key only once nothing follows (`parse_input(final=True)`);
   before 1.3.0 it stayed in the buffer forever.
+
+## Logo (1.4.0)
+
+- `wsdata logo` follows `selection.json` like the chart. PNG decoding is the script's own
+  (`png_pixels`, 8-bit, not interlaced, at most 1024 px a side, bounded decompression) -
+  the standard library has none, and the picture is untrusted input.
+- Sources `LOGO_URLS`, tried in order, cached 30 days per source; what is not a PNG is
+  deleted and the symbol remembered in `NO_LOGO` for the process. Only a `SYMBOL` match
+  reaches the address. Demo mode never fetches: monogram.
+- Tile ground: dark for a logo that is mostly white **and** has transparent corners
+  (Alnylam); a picture with a ground of its own keeps the light tile (Apple from FMP).
+- Half blocks: `▀` with the top pixel as foreground and the bottom one as background,
+  256 colours (`colour256`) so that tmux and termshot need no truecolor.
 
 ## The chart's numbers (1.2.0)
 

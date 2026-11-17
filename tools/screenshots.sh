@@ -39,7 +39,7 @@ python3 tools/termshot.py $S "$OUT/wallstreet.png"
 python3 tools/termshot.py $S "$OUT/quotes.png" --pane 0
 python3 tools/termshot.py $S "$OUT/chart.png" --pane 1
 python3 tools/termshot.py $S "$OUT/newsboat.png" --pane 2
-python3 tools/termshot.py $S "$OUT/picture.png" --pane 3
+python3 tools/termshot.py $S "$OUT/logo.png" --pane 3
 # the search, with a query typed
 tmux send-keys -t $S.0 /
 tmux send-keys -t $S.0 -l "ai"

@@ -20,14 +20,14 @@ Files in the current release:
 
 - **Click a stock, see its chart** — The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year. Any other stock is one search away: press `/`, type its name, and it stays on your watchlist.
 - **Three tickers** — Across the bottom of the window: the day's biggest gainers in green, the biggest losers in red and the headlines of all feeds in yellow, each scrolling at its own pace.
-- **News beside the numbers** — A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.
+- **News beside the numbers** — A feed reader shows the latest articles and reloads by itself; next to it stands the logo of the company you selected, drawn with block characters. One list of feeds drives the reader and the ticker — edit it to follow other news.
 - **No key, no account** — The quotes come from the Nasdaq market-movers interface, the news from public RSS feeds of BBC, CNBC, MarketWatch and the WSJ. Nothing to register, nothing to configure, and wallstreet itself collects nothing.
 - **A demo mode for the camera** — `wallstreet --demo` shows twenty companies that do not exist, prices that drift every minute and invented headlines. Nothing is fetched — for presentations, screenshots, a film set or a machine without a network.
 - **Careful with what the network sends** — Headlines and company names are stripped of control characters before they reach your terminal. Pictures are loaded over http(s) from public hosts only, and the cache is a folder that only you can write to.
 
 ### What it looks like
 
-- **The whole screen** — Quotes, chart, feed reader, picture and three tickers — here in demo mode. ([image](https://wallstreet.celox.io/assets/gallery/wallstreet.jpg))
+- **The whole screen** — Quotes, chart, feed reader, logo and three tickers — here in demo mode. ([image](https://wallstreet.celox.io/assets/gallery/wallstreet.jpg))
 - **Chart** — The selected stock since the start of the year, drawn with braille characters. ([image](https://wallstreet.celox.io/assets/gallery/chart.jpg))
 - **Search** — Type a name or a symbol; Enter puts the stock on your watchlist. ([image](https://wallstreet.celox.io/assets/gallery/search.jpg))
 - **Headlines** — One headline after the other, with the time. ([image](https://wallstreet.celox.io/assets/gallery/headlines.jpg))
@@ -50,7 +50,7 @@ Files in the current release:
 
 **Where do the numbers come from?** From the market-movers interface of nasdaq.com: the most active, rising and falling stocks of the trading day. Outside trading hours the last close stays on screen. They are for looking at, not for trading.
 
-**What does it need?** macOS or Linux, `tmux` and Python 3.9 or newer. The feed reader needs `newsboat`, the picture `img2txt` from libcaca; without them those two panes stay away. Homebrew installs all of it.
+**What does it need?** macOS or Linux, `tmux` and Python 3.9 or newer. The feed reader needs `newsboat`; without it that pane stays away. Homebrew installs it.
 
 **How do I update?** With Homebrew: `brew upgrade wallstreet`. Otherwise run the installer script again; it replaces the installed copy with the newest release.
 

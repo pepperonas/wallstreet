@@ -67,7 +67,7 @@ version scraped are gone or refuse scripts, and it needs Linux; this project giv
 sources that answer, runs on macOS and Linux, and has a demo mode for when the content
 should not be the day's news.
 
-![wallstreet in demo mode: the quote table with one row selected on the left, the chart of that stock beside it, below the chart a feed reader and a picture as ASCII art, and three tickers for gainers, losers and headlines at the bottom](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/wallstreet.png)
+![wallstreet in demo mode: the quote table with one row selected on the left, the chart of that stock beside it, below the chart a feed reader and the monogram of the selected company, and three tickers for gainers, losers and headlines at the bottom](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/wallstreet.png)
 
 *The pictures in this README are taken in demo mode: the companies and headlines are invented.*
 
@@ -107,12 +107,11 @@ curl -fsSL https://github.com/pepperonas/wallstreet/releases/latest/download/ins
 
 ```sh
 git clone https://github.com/pepperonas/wallstreet.git
-brew install tmux newsboat libcaca jp2a      # Debian/Ubuntu: apt install tmux newsboat caca-utils jp2a
+brew install tmux newsboat      # Debian/Ubuntu: apt install tmux newsboat
 wallstreet/bin/wallstreet
 ```
 
-`tmux` and Python 3.9 or newer are required. Without `newsboat` the feed reader stays away,
-without `img2txt` (libcaca) the picture.
+`tmux` and Python 3.9 or newer are required. Without `newsboat` the feed reader stays away.
 
 ## Usage
 
@@ -140,7 +139,7 @@ does not touch your mouse setting — the keys work either way, and `set -g mous
 the clicks work too. A click on a pane also makes it the one that gets the keys.
 
 The layout follows the terminal: from 150 columns all seven panes, below that without the
-picture, below 110 columns the quote table and the tickers only.
+logo, below 110 columns the quote table and the tickers only.
 
 ## What is on the screen
 
@@ -158,6 +157,14 @@ picture, below 110 columns the quote table and the tickers only.
 |---|---|
 | ![The chart pane: symbol, price, change, span tabs and the course since the start of the year](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The search: results for a query, one of them marked, the input line below](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/search.png) |
 
+### The logo
+
+Beside the feed reader stands the logo of the company you selected, drawn with half-block
+characters — two pixels per character cell. A logo drawn in white gets a dark tile, every
+other a light one. A company neither source has a logo for gets a monogram: the first two
+letters of its symbol on a colour of its own. The old news picture (`lib/wallstreet/img2txt`,
+needs libcaca) is still in the package but no longer on the default screen.
+
 ## Data sources
 
 | What | From | Refreshed |
@@ -166,11 +173,12 @@ picture, below 110 columns the quote table and the tickers only.
 | search | `api.nasdaq.com/api/autocomplete/slookup` — stocks and ETFs; notes and mutual funds are left out, they have no course to draw | on typing, an hour per query |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |
-| headlines, feed reader, pictures | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
+| logo of the selected company | `financialmodelingprep.com/image-stock/<symbol>.png`, else `assets.parqet.com/logos/symbol/<symbol>` — these two learn which symbol you selected | once, kept 30 days |
+| headlines, feed reader | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
 
 The quotes are the day's movements on the US exchanges; outside trading hours the last
 close stays on screen. To follow other news, edit `newsboat.urls` — the one list feeds the
-reader, the ticker and the pictures.
+reader and the ticker.
 
 What was replaced, and why: Yahoo Finance answers scripts with 429, the markets page of
 wsj.com with 403, the Reuters feeds are switched off, and the CNN feeds have carried no new
@@ -191,7 +199,7 @@ wallstreet --demo
 
 Twenty companies that do not exist, with prices that drift a little every minute and a
 course for every span that ends at the price in the table, two dozen invented headlines,
-and a picture for the picture pane. Nothing is fetched. Use it for
+and a monogram where the logo would be. Nothing is fetched. Use it for
 screenshots, presentations and screens in the background of a film — or on a machine
 without a network.
 
@@ -262,7 +270,7 @@ matches `VERSION`, runs the tests, builds `wallstreet.tar.gz`, `install.sh` and
 - **A click does nothing.** tmux's mouse support is off in your own session: `tmux set -g mouse on`, or use the arrow keys.
 - **The day's chart differs from another site before 9:30 or after 16:00.** The coloured part is the regular session; what trades after the close is grey, and the header names the after-hours price beside the day's result.
 - **"No chart data for this symbol right now."** Nasdaq has no course for some warrants and units among the movers; pick another row.
-- **The feed reader or the picture is missing.** `newsboat` or `img2txt` is not installed,
+- **The feed reader or the logo is missing.** `newsboat` is not installed,
   or the terminal is narrower than 110 or 150 columns.
 - **A feed shows nothing.** Feeds move; check the URL in `newsboat.urls` in a browser.
 - **Old data after editing the feed list.** Remove the cache directory named above.

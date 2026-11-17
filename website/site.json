@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 5,
+ "asset_version": 6,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -210,11 +210,11 @@
      "fr": "Les nouvelles à côté des chiffres"
     },
     "p": {
-     "en": "A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.",
-     "de": "Ein Feedreader zeigt die neuesten Artikel und lädt von selbst nach; daneben erscheint ein Pressefoto aus den Feeds als farbige ASCII-Art. Eine Feed-Liste speist Reader, Laufband und Bilder — wer andere Nachrichten will, ändert sie.",
-     "es": "Un lector de feeds muestra los últimos artículos y se recarga solo; a su lado aparece una foto de prensa de los feeds en arte ASCII en color. Una sola lista de feeds alimenta el lector, la cinta y las imágenes: edítala para seguir otras noticias.",
-     "it": "Un lettore di feed mostra gli ultimi articoli e si ricarica da solo; accanto appare una foto di stampa dai feed in ASCII art a colori. Un unico elenco di feed alimenta il lettore, il nastro e le immagini: modificalo per seguire altre notizie.",
-     "fr": "Un lecteur de flux affiche les derniers articles et se recharge tout seul ; à côté, une photo de presse issue des flux apparaît en art ASCII en couleur. Une seule liste de flux alimente le lecteur, le bandeau et les images : modifiez-la pour suivre d'autres nouvelles."
+     "en": "A feed reader shows the latest articles and reloads by itself; next to it stands the logo of the company you selected, drawn with block characters. One list of feeds drives the reader and the ticker — edit it to follow other news.",
+     "de": "Ein Feedreader zeigt die neuesten Artikel und lädt von selbst nach; daneben steht das Logo der ausgewählten Firma, aus Blockzeichen gezeichnet. Eine Feed-Liste speist Reader und Laufband — wer andere Nachrichten will, ändert sie.",
+     "es": "Un lector de feeds muestra los últimos artículos y se recarga solo; a su lado está el logotipo de la empresa seleccionada, dibujado con caracteres de bloque. Una sola lista de feeds alimenta el lector y la cinta: edítala para seguir otras noticias.",
+     "it": "Un lettore di feed mostra gli ultimi articoli e si ricarica da solo; accanto c'è il logo dell'azienda selezionata, disegnato con caratteri a blocchi. Un unico elenco di feed alimenta il lettore e il nastro: modificalo per seguire altre notizie.",
+     "fr": "Un lecteur de flux affiche les derniers articles et se recharge tout seul ; à côté, le logo de l'entreprise sélectionnée, dessiné en caractères blocs. Une seule liste de flux alimente le lecteur et le bandeau : modifiez-la pour suivre d'autres nouvelles."
     }
    },
    {
@@ -291,11 +291,11 @@
      "fr": "L'écran entier"
     },
     "p": {
-     "en": "Quotes, chart, feed reader, picture and three tickers — here in demo mode.",
-     "de": "Kurse, Verlauf, Feedreader, Bild und drei Laufbänder — hier im Demo-Modus.",
-     "es": "Cotizaciones, gráfico, lector de feeds, imagen y tres cintas, aquí en modo demo.",
-     "it": "Quotazioni, grafico, lettore di feed, immagine e tre nastri, qui in modalità demo.",
-     "fr": "Cours, courbe, lecteur de flux, image et trois bandeaux, ici en mode démo."
+     "en": "Quotes, chart, feed reader, logo and three tickers — here in demo mode.",
+     "de": "Kurse, Verlauf, Feedreader, Logo und drei Laufbänder — hier im Demo-Modus.",
+     "es": "Cotizaciones, gráfico, lector de feeds, logotipo y tres cintas, aquí en modo demo.",
+     "it": "Quotazioni, grafico, lettore di feed, logo e tre nastri, qui in modalità demo.",
+     "fr": "Cours, courbe, lecteur de flux, logo et trois bandeaux, ici en mode démo."
     }
    },
    {
@@ -456,11 +456,11 @@
      "fr": "De quoi a-t-il besoin ?"
     },
     "a": {
-     "en": "macOS or Linux, <code>tmux</code> and Python 3.9 or newer. The feed reader needs <code>newsboat</code>, the picture <code>img2txt</code> from libcaca; without them those two panes stay away. Homebrew installs all of it.",
-     "de": "macOS oder Linux, <code>tmux</code> und Python 3.9 oder neuer. Der Feedreader braucht <code>newsboat</code>, das Bild <code>img2txt</code> aus libcaca; ohne sie bleiben diese beiden Fenster weg. Homebrew installiert alles mit.",
-     "es": "macOS o Linux, <code>tmux</code> y Python 3.9 o posterior. El lector de feeds necesita <code>newsboat</code> y la imagen <code>img2txt</code> de libcaca; sin ellos, esos dos paneles no aparecen. Homebrew lo instala todo.",
-     "it": "macOS o Linux, <code>tmux</code> e Python 3.9 o successivo. Il lettore di feed richiede <code>newsboat</code>, l'immagine <code>img2txt</code> di libcaca; senza di essi quei due riquadri non compaiono. Homebrew installa tutto.",
-     "fr": "macOS ou Linux, <code>tmux</code> et Python 3.9 ou plus récent. Le lecteur de flux demande <code>newsboat</code>, l'image <code>img2txt</code> de libcaca ; sans eux, ces deux panneaux n'apparaissent pas. Homebrew installe le tout."
+     "en": "macOS or Linux, <code>tmux</code> and Python 3.9 or newer. The feed reader needs <code>newsboat</code>; without it that pane stays away. Homebrew installs it.",
+     "de": "macOS oder Linux, <code>tmux</code> und Python 3.9 oder neuer. Der Feedreader braucht <code>newsboat</code>; ohne ihn bleibt dieses Fenster weg. Homebrew installiert ihn mit.",
+     "es": "macOS o Linux, <code>tmux</code> y Python 3.9 o posterior. El lector de feeds necesita <code>newsboat</code>; sin él, ese panel no aparece. Homebrew lo instala.",
+     "it": "macOS o Linux, <code>tmux</code> e Python 3.9 o successivo. Il lettore di feed richiede <code>newsboat</code>; senza di esso quel riquadro non compare. Homebrew lo installa.",
+     "fr": "macOS ou Linux, <code>tmux</code> et Python 3.9 ou plus récent. Le lecteur de flux demande <code>newsboat</code> ; sans lui, ce panneau n'apparaît pas. Homebrew l'installe."
     }
    },
    {
