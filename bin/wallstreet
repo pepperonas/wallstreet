@@ -18,7 +18,7 @@
 # limitations under the License.
 
 PKG="wallstreet"
-VERSION="1.2.0"
+VERSION="1.3.0"
 widget_dir="$(cd "$(dirname "$0")/../lib/$PKG" && pwd)"
 
 case "$1" in
@@ -75,7 +75,12 @@ width=$(tmux display-message -p -t "$win" '#{window_width}')
 # Clicks reach the quote table only with tmux's mouse support.  A session this
 # script created gets it; somebody else's session keeps its own setting, the
 # arrow keys work either way.
-[ -n "$WALLSTREET_OWN_SESSION" ] && tmux set-option -t $PKG mouse on >/dev/null 2>&1
+if [ -n "$WALLSTREET_OWN_SESSION" ]; then
+	tmux set-option -t $PKG mouse on \; \
+		set-option -t $PKG status-style "bg=colour235,fg=colour246" \; \
+		set-option -t $PKG status-format[0] "#[fg=colour220,bold] $PKG #[default]#[align=right]click a stock  ·  / search  ·  1-5 span  ·  d remove from watchlist  ·  Ctrl-C quit " \
+		>/dev/null 2>&1
+fi
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker topNews" >/dev/null 2>&1
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker -" >/dev/null 2>&1
 tmux split-window -v -l 3 -t "$quotes" "$run $widget_dir/ticker +" >/dev/null 2>&1

@@ -126,6 +126,8 @@ wallstreet --version
 |---|---|---|
 | quote table | click on a row | select that stock |
 | quote table | `↑` `↓`, `j` `k`, mouse wheel | move the selection |
+| quote table | `/`, or a click on the hint line | search a stock by name or symbol; `Enter` or a click adds it to the watchlist and shows its chart, `Esc` goes back |
+| quote table | `d` on a watchlist row | remove it from the watchlist |
 | quote table or chart | `1` `2` `3` `4` `5` | span of the chart: day, month, three months, year to date, year |
 | chart | click on `1D` `1M` `3M` `YTD` `1Y` | open that span |
 | chart | click elsewhere, `→` `←` | next or previous span |
@@ -144,7 +146,7 @@ picture, below 110 columns the quote table and the tickers only.
 
 | Pane | What it shows |
 |---|---|
-| **Quotes** | most active stocks by dollar volume, Nasdaq-100 movers, advancers, decliners — symbol, name, last price, change, percent; green for up, red for down; one row is selected; redrawn every minute and when the pane is resized |
+| **Quotes** | your watchlist, then most active stocks by dollar volume, Nasdaq-100 movers, advancers, decliners — symbol, name, last price, change, percent; green for up, red for down; one row is selected; redrawn every minute and when the pane is resized |
 | **Chart** | the course of the selected stock in braille characters, with last price, change over the span and the axis values. The day runs from the opening bell at 9:30 New York time, with yesterday's close as a dotted line and after-hours trading in grey; month, three months, year to date and year are daily closes ending with today's price |
 | **Gainers ticker** | the day's biggest gainers, scrolling, green |
 | **Losers ticker** | the day's biggest losers, scrolling, red |
@@ -154,13 +156,14 @@ picture, below 110 columns the quote table and the tickers only.
 
 | | |
 |---|---|
-| ![The chart pane: symbol, price, change, span tabs and the course of three months](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The quote table alone, four sections, one row selected](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/table.png) |
+| ![The chart pane: symbol, price, change, span tabs and the course since the start of the year](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The search: results for a query, one of them marked, the input line below](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/search.png) |
 
 ## Data sources
 
 | What | From | Refreshed |
 |---|---|---|
 | quotes, gainers, losers | `api.nasdaq.com/api/marketmovers` — no key, no account | every 55 s |
+| search | `api.nasdaq.com/api/autocomplete/slookup` — stocks and ETFs; notes and mutual funds are left out, they have no course to draw | on typing, an hour per query |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |
 | headlines, feed reader, pictures | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
@@ -172,6 +175,9 @@ reader, the ticker and the pictures.
 What was replaced, and why: Yahoo Finance answers scripts with 429, the markets page of
 wsj.com with 403, the Reuters feeds are switched off, and the CNN feeds have carried no new
 entry since 2023.
+
+The table of movers is what Nasdaq publishes for the day; any other stock is one search
+away and stays in your watchlist.
 
 These are other people's services. They may change or go away, and wallstreet is not
 affiliated with any of them; if a source stops answering, the last good state stays on
@@ -208,7 +214,7 @@ share/wallstreet/wsdata marquee yellow 0.08 "some text"
 The cache lives in `~/Library/Caches/wallstreet` (macOS) or `~/.cache/wallstreet`: quotes
 for 55 seconds, feeds for 5 minutes, pictures for a day. The table and the chart are two
 processes in two panes; what is selected travels through one small file in the same
-directory. Several panes share one request,
+directory, and the watchlist is another one. Several panes share one request,
 and when the network is down the last good state is used. No telemetry, no account, no
 configuration.
 
@@ -242,7 +248,7 @@ python3 tools/badges.py                     # the three counted README badges
 The tests load `wsdata` with a private cache directory and either the demo data or a
 patched fetch: the URL filter, the cache (reuse, replacement, stale copy on failure), the
 table (never wider or higher than the terminal, never ending on a bare heading), keyboard
-and mouse input, the selection file, the chart (no gaps in the line, fits its pane), the
+and mouse input, the search and the watchlist, the selection file, the chart (no gaps in the line, fits its pane), the
 ticker, feed parsing with hostile input, and the shell side of every pane.
 
 A release is a tag: `git tag v1.2.3 && git push --tags`. The workflow checks that the tag

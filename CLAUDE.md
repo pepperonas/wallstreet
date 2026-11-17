@@ -46,6 +46,19 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
 - A row of the table must not contain `ESC[0m` — it would end the highlight of the selected
   row after the first column (pinned). Use `ESC[39;22m`.
 
+## Search and watchlist (1.3.0)
+
+- `search()` asks `api.nasdaq.com/api/autocomplete/slookup/25?search=` and keeps `asset`
+  STOCKS and ETF only (mutual funds and notes have no chart). Demo: `DEMO_STOCKS`.
+- The watchlist is `watchlist.json` (`watchlist-demo.json`) in the cache directory, newest
+  first, at most `WATCH_MAX`; `read_watchlist()` validates like `read_selection()`.
+  Its quotes come from `quote()` - one cached request per symbol and minute.
+- `table_rows()` returns `(text, symbol, section)`; section `watch` is what `d` may remove.
+- Search results sit on line `3 + i` of the pane: `cmd_browse` maps a click on line `y` to
+  result `y - 3`, and a test reads the position off the rendered view.
+- A lone ESC is the Escape key only once nothing follows (`parse_input(final=True)`);
+  before 1.3.0 it stayed in the buffer forever.
+
 ## The chart's numbers (1.2.0)
 
 - The day is the **regular session** (9:30-16:00 New York; the API writes local time as if

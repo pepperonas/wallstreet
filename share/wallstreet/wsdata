@@ -13,7 +13,8 @@
 #   wsdata headlines                 one headline per line
 #   wsdata image                     path of a random downloaded picture
 #   wsdata browse                    the quote table, interactive: click a row or
-#                                    move with the arrow keys to select a stock
+#                                    move with the arrow keys to select a stock,
+#                                    "/" searches a stock and adds it to the watchlist
 #   wsdata chart                     price chart of the selected stock, follows
 #                                    the selection; 1-4 or a click change the span
 #   wsdata cachedir                  path of the private cache directory
@@ -700,15 +701,20 @@ class Terminal:
         ready, _, _ = select.select([self.fd], [], [], timeout)
         if ready:
             self.buffer += os.read(self.fd, 256).decode("utf-8", "replace")
-        events, self.buffer = parse_input(self.buffer)
+        # an ESC that is still alone after a moment is the key, not a sequence
+        final = self.buffer == "\x1b" and not select.select([self.fd], [], [], 0.05)[0]
+        events, self.buffer = parse_input(self.buffer, final)
         return events
 
 
-def parse_input(buffer):
+def parse_input(buffer, final=False):
     """Split raw terminal input into events; an unfinished sequence stays in the rest.
 
-    Events: ("key", name) for up/down/enter/escape or a single character,
-            ("click", x, y) with 1-based cell coordinates, ("wheel", -1 | +1).
+    Events: ("key", name) for up/down/left/right/enter/escape/backspace/delete or a
+            single character, ("click", x, y) with 1-based cell coordinates,
+            ("wheel", -1 | +1).
+    FINAL says that nothing more is coming for now: a lone ESC is then the Escape key
+    and not the start of a sequence.
     """
     events = []
     while buffer:
@@ -726,8 +732,15 @@ def parse_input(buffer):
             events.append(("key", {"A": "up", "B": "down", "C": "right", "D": "left"}[m.group(1)]))
             buffer = buffer[m.end():]
             continue
+        if buffer.startswith("\x1b[3~"):
+            events.append(("key", "delete"))
+            buffer = buffer[4:]
+            continue
         if buffer[0] == "\x1b":
             if re.fullmatch(r"\x1b(\[<?[\d;]*)?", buffer):
+                if final and buffer == "\x1b":
+                    events.append(("key", "escape"))
+                    buffer = ""
                 break                      # the rest of the sequence has not arrived yet
             m = re.match(r"\x1b\[[\d;?<]*[A-Za-z~]", buffer)
             if m:
@@ -736,7 +749,8 @@ def parse_input(buffer):
             events.append(("key", "escape"))
             buffer = buffer[1:]
             continue
-        events.append(("key", "enter" if buffer[0] in "\r\n" else buffer[0]))
+        events.append(("key", "enter" if buffer[0] in "\r\n" else
+                       "backspace" if buffer[0] in "\x7f\x08" else buffer[0]))
         buffer = buffer[1:]
     return events, buffer
 
@@ -752,20 +766,138 @@ def draw(lines):
 
 SECTIONS = (("MOST ACTIVE", "MostActiveByDollarVolume"), ("NASDAQ-100 MOVERS", "Nasdaq100Movers"),
             ("ADVANCERS", "MostAdvanced"), ("DECLINERS", "MostDeclined"))
+SYMBOL = re.compile(r"[A-Za-z0-9.^-]{1,12}")
+WATCH_MAX = 12
 
+
+# ---------------------------------------------------------------- watchlist
+#
+# Stocks found with the search are kept in a list of their own, above the day's
+# movers, until they are removed again.
+
+def watchlist_path():
+    return os.path.join(CACHE, "watchlist-demo.json" if DEMO else "watchlist.json")
+
+
+def read_watchlist():
+    """[(symbol, name)], newest first; a damaged file is an empty list."""
+    try:
+        with open(watchlist_path(), encoding="utf-8") as f:
+            data = json.load(f)
+        out = []
+        for item in data:
+            symbol = clean(item.get("symbol", ""))
+            if SYMBOL.fullmatch(symbol) and symbol not in [s for s, _ in out]:
+                out.append((symbol, clean(item.get("name", ""))[:80]))
+        return out[:WATCH_MAX]
+    except (OSError, ValueError, AttributeError, TypeError):
+        return []
+
+
+def write_watchlist(items):
+    fd, tmp = tempfile.mkstemp(dir=CACHE, prefix=".tmp-")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump([{"symbol": s, "name": n} for s, n in items[:WATCH_MAX]], f)
+    os.replace(tmp, watchlist_path())
+
+
+def watch(symbol, name):
+    """Put a stock at the top of the watchlist."""
+    if SYMBOL.fullmatch(symbol or ""):
+        write_watchlist([(symbol, name)] + [i for i in read_watchlist() if i[0] != symbol])
+
+
+def unwatch(symbol):
+    write_watchlist([i for i in read_watchlist() if i[0] != symbol])
+
+
+def watch_rows():
+    """The watchlist as table rows, with the quote of each stock."""
+    out = []
+    for symbol, name in read_watchlist():
+        row = {"symbol": symbol, "name": name, "lastSalePrice": "", "lastSaleChange": "", "change": ""}
+        if DEMO:
+            found = next((r for key in ("MostActiveByDollarVolume", "Nasdaq100Movers")
+                          for r in rows(key) if r.get("symbol") == symbol), None)
+            if found:
+                row = dict(found)
+        else:
+            q = quote(symbol)
+            if q:
+                row.update(lastSalePrice=price(q["last"]), lastSaleChange="%+.2f" % q["change"],
+                           change="%+.2f%%" % q["pct"],
+                           deltaIndicator="down" if q["change"] < 0 else "up")
+        out.append(row)
+    return out
+
+
+# ------------------------------------------------------------------- search
+
+def search(query):
+    """Stocks and funds traded on an exchange whose symbol or name matches QUERY:
+    [{"symbol", "name", "exchange"}], best match first, at most ten."""
+    query = re.sub(r"\s+", " ", clean(query)).strip()[:40]
+    if not query:
+        return []
+    if DEMO:
+        q = query.lower()
+        hits = [(sym, name) for sym, name, _ in DEMO_STOCKS if q in sym.lower() or q in name.lower()]
+        hits.sort(key=lambda h: (not h[0].lower().startswith(q), h[0]))
+        return [{"symbol": sym, "name": name, "exchange": "DEMO"} for sym, name in hits[:10]]
+    url = "https://api.nasdaq.com/api/autocomplete/slookup/25?search=" + urllib.parse.quote(query, safe="")
+    key = "search-%s.json" % re.sub(r"[^a-z0-9]", "_", query.lower())[:40]
+    try:
+        data = json.loads(cached(key, 3600, lambda: fetch(url)))["data"] or []
+    except (ValueError, KeyError, TypeError):
+        return []
+    out = []
+    for item in data:
+        try:
+            symbol = clean(item.get("symbol") or "")
+            # notes and mutual funds have no course to draw
+            if item.get("asset") not in ("STOCKS", "ETF") or not SYMBOL.fullmatch(symbol):
+                continue
+            out.append({"symbol": symbol, "name": clean(item.get("name") or symbol),
+                        "exchange": clean(item.get("exchange") or "")[:12]})
+        except AttributeError:
+            continue
+    return out[:10]
+
+
+def search_lines(query, results, index, cols, lines, waiting=False):
+    """The search view as LINES strings; result I is on line 3 + I (1-based)."""
+    width = max(20, cols - 1)
+    out = ["\033[1;33mSEARCH\033[0m", "\033[90m%s\033[0m" % ("-" * width)]
+    room = max(0, lines - 4)
+    name_w = max(8, width - 21)
+    for i, r in enumerate(results[:room]):
+        text = "\033[1;34m%-6s\033[39;22m %-*s \033[90m%12s\033[39m" % (
+            r["symbol"][:6], name_w, r["name"][:name_w], r["exchange"][:12])
+        out.append("\033[48;5;238m%s\033[K\033[0m" % text if i == index else text + "\033[0m")
+    if not results:
+        note = ("Type a name or a symbol." if not query else
+                "searching ..." if waiting else "Nothing found for \"%s\"." % query)
+        out.append("\033[90m%s\033[0m" % note[:width])
+    out += [""] * max(0, lines - 2 - len(out))
+    out.append("\033[1;33msearch:\033[0m %s\033[7m \033[27m" % query[:max(0, width - 10)])
+    out.append("\033[90m%s\033[0m" % "enter add to watchlist · ↑↓ choose · esc back"[:width])
+    return out[:lines]
+
+
+# -------------------------------------------------------------------- table
 
 def table_rows(cols, lines):
-    """The quote table as [(text, symbol or None)], cut to LINES like cmd_table."""
+    """The quote table as [(text, symbol or None, section)], cut to LINES like cmd_table."""
     out = []
     name_w = max(8, cols - 42)
-    for title, key in SECTIONS:
-        data = rows(key)
+    sections = [("WATCHLIST", "watch", watch_rows())]
+    sections += [("INDEX MOVERS" if DEMO and key == "Nasdaq100Movers" else title, key, rows(key))
+                 for title, key in SECTIONS]
+    for title, key, data in sections:
         if not data:
             continue
-        if DEMO and key == "Nasdaq100Movers":
-            title = "INDEX MOVERS"
-        out.append(("\033[1;33m%s\033[0m" % title, None))
-        out.append(("\033[90m%s\033[0m" % ("-" * (cols - 1)), None))
+        out.append(("\033[1;33m%s\033[0m" % title, None, key))
+        out.append(("\033[90m%s\033[0m" % ("-" * (cols - 1)), None, key))
         for r in data:
             pct = percent(r)
             shown = "%+.2f%%" % pct if pct is not None else r.get("change", "")
@@ -774,42 +906,87 @@ def table_rows(cols, lines):
                 r.get("symbol", "")[:6], name_w, r.get("name", "")[:name_w],
                 r.get("lastSalePrice", "").lstrip("$")[:10],
                 "31" if down else "32", r.get("lastSaleChange", "")[:10], shown[:9])
-            out.append((text, r.get("symbol", "")))
-        out.append(("", None))
+            out.append((text, r.get("symbol", ""), key))
+        out.append(("", None, key))
     out = out[:max(3, lines)]
     while len(out) > 3 and out[-1][1] is None:
         out.pop()                           # no bare heading at the cut
     return out
 
 
+def table_view(table, index, cols, lines):
+    """The table pane: the rows with the selected one marked, and the hint line."""
+    on_watchlist = bool(table) and index < len(table) and table[index][2] == "watch"
+    hint = "click or ↑↓ select · / search · 1-5 span" + (" · d remove" if on_watchlist else "")
+    view = [("\033[48;5;238m%s\033[K\033[0m" % text if i == index else text + "\033[0m")
+            for i, (text, _, _) in enumerate(table)]
+    view = view[:max(0, lines - 1)]              # the hint keeps its line, whatever the table
+    view += [""] * max(0, lines - 1 - len(view))
+    view.append("\033[90m%s\033[0m" % hint[:max(0, cols - 1)])
+    return view
+
+
 def cmd_browse():
-    """The quote table with a selection: arrow keys, j/k, mouse wheel or a click."""
+    """The quote table with a selection - arrow keys, j/k, mouse wheel or a click -
+    and a search: "/" or a click on the hint line."""
     with Terminal() as term:
         table, shown, size, loaded, index = [], None, None, 0.0, 0
+        query, results, at_result, searched = None, [], 0, None      # query is None: not searching
         while True:
             now_size = tuple(term_size())
             if now_size != size or time.time() - loaded >= 60:
                 size, loaded = now_size, time.time()
                 table = table_rows(size[0], size[1] - 2)
-                picks = [i for i, (_, sym) in enumerate(table) if sym]
+                picks = [i for i, row in enumerate(table) if row[1]]
                 wanted = read_selection()[0]
                 index = next((i for i in picks if table[i][1] == wanted), picks[0] if picks else 0)
                 shown = None
-            picks = [i for i, (_, sym) in enumerate(table) if sym]
-            if picks and shown != index:
+            picks = [i for i, row in enumerate(table) if row[1]]
+            if query is not None:
+                state = ("search", query, at_result, searched)
+                if shown != state:
+                    draw(search_lines(query, results, at_result, size[0], size[1], waiting=searched != query))
+                    shown = state
+            elif picks and shown != index:
                 if table[index][1] != read_selection()[0]:
                     write_selection(symbol=table[index][1])
-                hint = "click or ↑↓ select · 1-5 span"
-                view = [("\033[48;5;238m%s\033[K\033[0m" % text if i == index else text + "\033[0m")
-                        for i, (text, _) in enumerate(table)]
-                view += [""] * max(0, size[1] - 1 - len(view))
-                view.append("\033[90m%s\033[0m" % hint[:max(0, size[0] - 1)])
-                draw(view[:size[1]])
+                draw(table_view(table, index, size[0], size[1]))
                 shown = index
             elif not picks and shown != "empty":
-                draw(["\033[33mNo market data available right now.\033[0m"])
+                draw(["\033[33mNo market data available right now.\033[0m", "",
+                      "\033[90m/ search\033[0m"])
                 shown = "empty"
-            for event in term.events(0.5):
+            events = term.events(0.5 if query is None else 0.25)
+            if query is not None and not events and searched != query:
+                results, searched, at_result = search(query), query, 0   # typing has paused: look it up
+                continue
+            for event in events:
+                if query is not None:
+                    chosen = None
+                    if event == ("key", "escape"):
+                        query, shown = None, None
+                    elif event == ("key", "enter"):
+                        if searched != query:
+                            results, searched, at_result = search(query), query, 0
+                        chosen = results[at_result] if results else None
+                    elif event[0] == "click" and 0 <= event[2] - 3 < len(results):
+                        chosen = results[event[2] - 3]
+                    elif event[0] == "wheel" or event in (("key", "up"), ("key", "down")):
+                        step = event[1] if event[0] == "wheel" else (-1 if event[1] == "up" else 1)
+                        at_result = max(0, min(len(results) - 1, at_result + step))
+                    elif event == ("key", "backspace"):
+                        query = query[:-1]
+                    elif event[0] == "key" and len(event[1]) == 1 and event[1].isprintable() and len(query) < 40:
+                        query += event[1]
+                    if chosen:
+                        watch(chosen["symbol"], chosen["name"])
+                        write_selection(symbol=chosen["symbol"])
+                        query, shown, loaded = None, None, 0.0          # back to the table, reloaded
+                    continue
+                if event == ("key", "/") or event == ("key", "s") or \
+                        (event[0] == "click" and event[2] == size[1]):
+                    query, results, at_result, searched, shown = "", [], 0, "", None
+                    continue
                 if not picks:
                     continue
                 at = picks.index(index) if index in picks else 0
@@ -823,6 +1000,10 @@ def cmd_browse():
                     index = picks[max(0, min(len(picks) - 1, at + step))]
                 elif event[0] == "key" and event[1] in "12345":
                     write_selection(span=SPAN_KEYS[int(event[1]) - 1])
+                elif event[0] == "key" and event[1] in ("d", "delete", "backspace") \
+                        and table[index][2] == "watch":
+                    unwatch(table[index][1])
+                    loaded, shown = 0.0, None                            # reload without it
     return 0
 
 

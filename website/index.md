@@ -18,7 +18,7 @@ Files in the current release:
 
 ## Features
 
-- **Click a stock, see its chart** — The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year.
+- **Click a stock, see its chart** — The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year. Any other stock is one search away: press `/`, type its name, and it stays on your watchlist.
 - **Three tickers** — Across the bottom of the window: the day's biggest gainers in green, the biggest losers in red and the headlines of all feeds in yellow, each scrolling at its own pace.
 - **News beside the numbers** — A feed reader shows the latest articles and reloads by itself; next to it a press photo from the feeds appears as coloured ASCII art. One list of feeds drives the reader, the ticker and the pictures — edit it to follow other news.
 - **No key, no account** — The quotes come from the Nasdaq market-movers interface, the news from public RSS feeds of BBC, CNBC, MarketWatch and the WSJ. Nothing to register, nothing to configure, and wallstreet itself collects nothing.
@@ -29,7 +29,7 @@ Files in the current release:
 
 - **The whole screen** — Quotes, chart, feed reader, picture and three tickers — here in demo mode. ([image](https://wallstreet.celox.io/assets/gallery/wallstreet.jpg))
 - **Chart** — The selected stock since the start of the year, drawn with braille characters. ([image](https://wallstreet.celox.io/assets/gallery/chart.jpg))
-- **Quote table** — Four sections, one row selected. ([image](https://wallstreet.celox.io/assets/gallery/table.jpg))
+- **Search** — Type a name or a symbol; Enter puts the stock on your watchlist. ([image](https://wallstreet.celox.io/assets/gallery/search.jpg))
 - **Headlines** — One headline after the other, with the time. ([image](https://wallstreet.celox.io/assets/gallery/headlines.jpg))
 
 ## Install
@@ -54,14 +54,14 @@ Files in the current release:
 
 **How do I update?** With Homebrew: `brew upgrade wallstreet`. Otherwise run the installer script again; it replaces the installed copy with the newest release.
 
-**Can I follow my own stocks or other news?** Other news: yes — the file `newsboat.urls` lists the feeds, one per line. Your own stocks: no. The table shows the day's market movers; a watch list is not part of wallstreet.
+**Can I follow my own stocks or other news?** Both. Press `/`, type a name or a symbol and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file `newsboat.urls` lists the feeds, one per line.
 
 **Is the download genuine?** Every release is built by GitHub Actions from the tagged source. This page shows the SHA-256 of each file; compare it with `shasum -a 256`, or let the installer script do it.
 
 ## Limits
 
 - wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.
-- The table shows the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols. Charts go back one year at most.
+- Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq. Charts go back one year at most.
 - The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.
 - It needs tmux and Python 3.9 or newer; there is no Windows version.
 - Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done.

@@ -7,6 +7,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-17
+
+### Added
+- **Search.** `/` in the quote table - or a click on its hint line - opens a search for
+  any stock or fund traded on a US exchange, by name or symbol. The results appear while
+  you type; Enter or a click takes one.
+- **Watchlist.** What you found is kept in a section of its own above the day's movers,
+  with its quote, and stays there between runs. `d` on a watchlist row removes it.
+- A status line at the bottom of the session names the keys.
+
+### Changed
+- Esc is recognised as a key of its own (it was held back as the possible start of an
+  escape sequence), Backspace and Delete are understood.
+
 ## [1.2.0] - 2026-11-17
 
 ### Added

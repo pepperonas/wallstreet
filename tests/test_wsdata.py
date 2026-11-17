@@ -705,7 +705,7 @@ class DayChart(Base):
 class Browse(Base):
     def test_every_quote_row_can_be_selected_and_headings_cannot(self):
         table = self.ws.table_rows(80, 60)
-        for text, symbol in table:
+        for text, symbol, _ in table:
             plain = ANSI.sub("", text)
             if symbol:
                 self.assertTrue(plain.startswith(symbol[:6]), plain)
@@ -718,14 +718,187 @@ class Browse(Base):
 
     def test_no_row_is_wider_than_the_pane(self):
         for cols in (60, 80, 120):
-            for text, _ in self.ws.table_rows(cols, 40):
+            for text, _, _ in self.ws.table_rows(cols, 40):
                 self.assertLess(len(ANSI.sub("", text)), cols)
 
     def test_the_marked_row_keeps_its_background_to_the_end(self):
         # a full reset inside the row would end the highlight after the first column
-        for text, symbol in self.ws.table_rows(80, 40):
+        for text, symbol, _ in self.ws.table_rows(80, 40):
             if symbol:
                 self.assertNotIn("\x1b[0m", text)
+
+
+class Keys(Base):
+    def test_backspace_in_both_encodings(self):
+        self.assertEqual(self.ws.parse_input("\x7f\x08")[0], [("key", "backspace"), ("key", "backspace")])
+
+    def test_the_delete_key(self):
+        self.assertEqual(self.ws.parse_input("\x1b[3~x")[0], [("key", "delete"), ("key", "x")])
+
+    def test_a_lone_escape_waits_while_more_may_come(self):
+        self.assertEqual(self.ws.parse_input("\x1b"), ([], "\x1b"))
+
+    def test_a_lone_escape_is_the_key_once_nothing_follows(self):
+        self.assertEqual(self.ws.parse_input("\x1b", final=True), ([("key", "escape")], ""))
+
+    def test_final_does_not_break_a_sequence_that_is_under_way(self):
+        self.assertEqual(self.ws.parse_input("\x1b[<0;3", final=True), ([], "\x1b[<0;3"))
+
+
+class Watchlist(Base):
+    def test_a_watched_stock_comes_first(self):
+        self.ws.watch("NRDL", "Nordlicht Robotics AG")
+        self.ws.watch("HLXQ", "Helix Quantum Corp.")
+        self.assertEqual([s for s, _ in self.ws.read_watchlist()], ["HLXQ", "NRDL"])
+
+    def test_watching_twice_moves_it_up_instead_of_doubling_it(self):
+        for symbol in ("NRDL", "HLXQ", "NRDL"):
+            self.ws.watch(symbol, symbol)
+        self.assertEqual([s for s, _ in self.ws.read_watchlist()], ["NRDL", "HLXQ"])
+
+    def test_unwatch_removes_only_that_one(self):
+        self.ws.watch("NRDL", "a")
+        self.ws.watch("HLXQ", "b")
+        self.ws.unwatch("NRDL")
+        self.assertEqual(self.ws.read_watchlist(), [("HLXQ", "b")])
+
+    def test_the_list_is_capped(self):
+        for i in range(30):
+            self.ws.watch("S%d" % i, "n")
+        self.assertEqual(len(self.ws.read_watchlist()), self.ws.WATCH_MAX)
+        self.assertEqual(self.ws.read_watchlist()[0][0], "S29")
+
+    def test_a_symbol_that_is_none_is_not_stored(self):
+        self.ws.watch("../../etc", "x")
+        self.ws.watch("", "x")
+        self.assertEqual(self.ws.read_watchlist(), [])
+
+    def test_a_tampered_file_is_cleaned_on_reading(self):
+        with open(self.ws.watchlist_path(), "w") as f:
+            json.dump([{"symbol": "OK", "name": "fine\x1b[2J"}, {"symbol": "a b/c", "name": "x"},
+                       {"symbol": "OK", "name": "twice"}, "garbage"], f)
+        self.assertEqual(self.ws.read_watchlist(), [])            # one bad entry spoils the file
+        with open(self.ws.watchlist_path(), "w") as f:
+            json.dump([{"symbol": "OK", "name": "fine\x1b[2J"}, {"symbol": "a b/c", "name": "x"},
+                       {"symbol": "OK", "name": "twice"}], f)
+        got = self.ws.read_watchlist()
+        self.assertEqual([s for s, _ in got], ["OK"])
+        self.assertNotIn("\x1b", got[0][1])
+
+    def test_the_watchlist_is_the_first_section_of_the_table(self):
+        self.ws.watch("KRYO", "Kryon Semiconductor")
+        table = self.ws.table_rows(80, 60)
+        self.assertEqual(ANSI.sub("", table[0][0]), "WATCHLIST")
+        self.assertEqual((table[2][1], table[2][2]), ("KRYO", "watch"))
+        self.assertRegex(ANSI.sub("", table[2][0]), r"KRYO +Kryon Semiconductor +\d+\.\d\d +[+-]\d")
+
+    def test_without_watched_stocks_there_is_no_empty_section(self):
+        self.assertNotIn("WATCHLIST", [ANSI.sub("", t) for t, _, _ in self.ws.table_rows(80, 60)])
+
+    def test_the_hint_offers_removal_only_on_a_watchlist_row(self):
+        self.ws.watch("KRYO", "Kryon Semiconductor")
+        table = self.ws.table_rows(80, 60)
+        on = ANSI.sub("", self.ws.table_view(table, 2, 80, 30)[-1])
+        off = ANSI.sub("", self.ws.table_view(table, 6, 80, 30)[-1])
+        self.assertIn("d remove", on)
+        self.assertNotIn("d remove", off)
+        self.assertIn("/ search", off)
+
+    def test_the_table_view_fills_the_pane_and_no_more(self):
+        table = self.ws.table_rows(80, 28)
+        for lines in (10, 30):
+            view = self.ws.table_view(self.ws.table_rows(80, lines - 2), 2, 80, lines)
+            self.assertEqual(len(view), lines)
+
+
+class DemoSearch(Base):
+    def test_symbol_and_name_are_searched(self):
+        self.assertEqual([r["symbol"] for r in self.ws.search("kry")], ["KRYO"])
+        self.assertEqual([r["symbol"] for r in self.ws.search("airlines")], ["ZPHR"])
+
+    def test_a_symbol_that_starts_with_the_query_comes_first(self):
+        hits = [r["symbol"] for r in self.ws.search("m")]
+        starts = [h.startswith("M") for h in hits]
+        self.assertEqual(starts, sorted(starts, reverse=True))
+
+    def test_an_empty_query_finds_nothing_and_asks_nobody(self):
+        with mock.patch.object(self.ws, "fetch", side_effect=AssertionError("fetched")):
+            self.assertEqual(self.ws.search("   "), [])
+            self.assertEqual(self.ws.search("zzzz"), [])
+
+    def test_the_view_fits_the_pane(self):
+        results = self.ws.search("a")
+        for cols, lines in ((80, 38), (50, 12), (120, 8)):
+            view = self.ws.search_lines("a", results, 0, cols, lines)
+            self.assertLessEqual(len(view), lines)
+            for line in view:
+                self.assertLess(len(ANSI.sub("", line)), cols, (cols, line))
+
+    def test_a_result_sits_where_a_click_looks_for_it(self):
+        # cmd_browse maps a click on line y to result y - 3
+        results = self.ws.search("a")
+        view = [ANSI.sub("", l) for l in self.ws.search_lines("a", results, 0, 80, 30)]
+        for i, r in enumerate(results):
+            self.assertTrue(view[i + 2].startswith(r["symbol"][:6]), (i, view[i + 2]))
+
+    def test_the_view_says_what_is_going_on(self):
+        text = lambda *a, **k: "\n".join(ANSI.sub("", l) for l in self.ws.search_lines(*a, **k))
+        self.assertIn("Type a name or a symbol.", text("", [], 0, 80, 20))
+        self.assertIn("searching ...", text("ab", [], 0, 80, 20, waiting=True))
+        self.assertIn('Nothing found for "ab".', text("ab", [], 0, 80, 20))
+
+
+class LiveSearch(Base):
+    demo = False
+
+    def answer(self, *items):
+        return json.dumps({"data": [dict({"exchange": "NYSE"}, **i) for i in items]}).encode()
+
+    def test_only_what_has_a_course_is_offered(self):
+        answer = self.answer({"symbol": "TSLA", "name": "Tesla", "asset": "STOCKS"},
+                             {"symbol": "BMBVGXX", "name": "A note linked to Tesla", "asset": "MUTUALFUNDS"},
+                             {"symbol": "TSLP", "name": "A fund", "asset": "ETF"},
+                             {"symbol": "X Y", "name": "broken", "asset": "STOCKS"})
+        with mock.patch.object(self.ws, "fetch", return_value=answer):
+            self.assertEqual([r["symbol"] for r in self.ws.search("tesla")], ["TSLA", "TSLP"])
+
+    def test_names_from_the_api_are_cleaned(self):
+        answer = self.answer({"symbol": "EVIL", "name": "Evil\x1b[2J Corp\x07", "asset": "STOCKS"})
+        with mock.patch.object(self.ws, "fetch", return_value=answer):
+            name = self.ws.search("evil")[0]["name"]
+        self.assertNotIn("\x1b", name)
+        self.assertNotIn("\x07", name)
+
+    def test_the_query_cannot_leave_its_place_in_the_url(self):
+        with mock.patch.object(self.ws, "fetch", return_value=self.answer()) as fetch:
+            self.ws.search("a&b=c /../x")
+        self.assertTrue(fetch.call_args[0][0].endswith("?search=a%26b%3Dc%20%2F..%2Fx"))
+
+    def test_a_broken_answer_finds_nothing(self):
+        for raw in (b"<html>busy</html>", b'{"data": null}', b'{"data": ["x", 3]}'):
+            with tempfile.TemporaryDirectory() as tmp:
+                ws = load(False, tmp)
+                with mock.patch.object(ws, "fetch", return_value=raw):
+                    self.assertEqual(ws.search("abc"), [])
+
+    def test_at_most_ten_results(self):
+        answer = self.answer(*[{"symbol": "S%d" % i, "name": "n", "asset": "STOCKS"} for i in range(25)])
+        with mock.patch.object(self.ws, "fetch", return_value=answer):
+            self.assertEqual(len(self.ws.search("s")), 10)
+
+    def test_the_watchlist_shows_the_days_quote(self):
+        info = {"data": {"primaryData": {"lastSalePrice": "$35.84", "netChange": "-0.78", "percentageChange": "-2.13%"},
+                         "secondaryData": None}}
+        self.ws.watch("DB", "Deutsche Bank AG")
+        with mock.patch.object(self.ws, "fetch", return_value=json.dumps(info).encode()):
+            row = self.ws.watch_rows()[0]
+        self.assertEqual((row["lastSalePrice"], row["lastSaleChange"], row["change"], row["deltaIndicator"]),
+                         ("35.84", "-0.78", "-2.13%", "down"))
+
+    def test_a_watched_stock_without_a_quote_still_has_its_row(self):
+        self.ws.watch("DB", "Deutsche Bank AG")
+        with mock.patch.object(self.ws, "fetch", side_effect=OSError("down")):
+            self.assertEqual(self.ws.watch_rows()[0]["symbol"], "DB")
 
 
 class Main(Base):

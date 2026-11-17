@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 4,
+ "asset_version": 5,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -100,6 +100,7 @@
   "feature_list": [
    "Interactive quote table: most active stocks, Nasdaq-100 movers, advancers and decliners; select a row by click or arrow keys",
    "Chart of the selected stock in braille characters: the trading day from the opening bell with the previous close as a line, one month, three months, year to date or a year",
+   "Search for any US-listed stock or ETF by name or symbol, with a watchlist that is kept between runs",
    "Three tickers: gainers in green, losers in red, headlines in yellow",
    "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
    "Data without an API key or an account: Nasdaq market movers and public RSS feeds",
@@ -111,7 +112,7 @@
   ],
   "limits": [
    "wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.",
-   "The table shows the day's market movers of the US exchanges as published by Nasdaq; there is no free choice of symbols. Charts go back one year at most.",
+   "Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq. Charts go back one year at most.",
    "The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.",
    "It needs tmux and Python 3.9 or newer; there is no Windows version.",
    "Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done."
@@ -177,11 +178,11 @@
      "fr": "Cliquez sur une action, voyez sa courbe"
     },
     "p": {
-     "en": "The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year.",
-     "de": "Die Tabelle zeigt die meistgehandelten Aktien, die Bewegungen im Nasdaq-100, Gewinner und Verlierer. Ein Klick auf eine Zeile oder die Pfeiltasten genügen, und das Fenster daneben zeichnet den Verlauf dieser Aktie: heute ab Börsenstart oder über einen Monat, drei Monate, das laufende Jahr oder ein ganzes Jahr.",
-     "es": "La tabla muestra las acciones más negociadas, los movimientos del Nasdaq-100, las que suben y las que bajan. Haz clic en una fila o muévete con las flechas, y el panel de al lado dibuja la evolución de esa acción: hoy desde la apertura, o un mes, tres meses, el año en curso o un año completo.",
-     "it": "La tabella elenca le azioni più scambiate, i movimenti del Nasdaq-100, i titoli in rialzo e in ribasso. Clicca una riga o spostati con le frecce, e il riquadro accanto disegna l'andamento di quel titolo: oggi dall'apertura, oppure un mese, tre mesi, l'anno in corso o un anno intero.",
-     "fr": "Le tableau liste les actions les plus échangées, les mouvements du Nasdaq-100, les hausses et les baisses. Cliquez sur une ligne ou déplacez-vous avec les flèches, et le panneau voisin trace le cours de cette action : aujourd'hui depuis l'ouverture, ou sur un mois, trois mois, l'année en cours ou un an."
+     "en": "The table lists the most active stocks, the Nasdaq-100 movers, advancers and decliners. Click a row or move with the arrow keys, and the pane beside it draws that stock's course: today from the opening bell, or a month, three months, the year so far or a full year. Any other stock is one search away: press <code>/</code>, type its name, and it stays on your watchlist.",
+     "de": "Die Tabelle zeigt die meistgehandelten Aktien, die Bewegungen im Nasdaq-100, Gewinner und Verlierer. Ein Klick auf eine Zeile oder die Pfeiltasten genügen, und das Fenster daneben zeichnet den Verlauf dieser Aktie: heute ab Börsenstart oder über einen Monat, drei Monate, das laufende Jahr oder ein ganzes Jahr. Jede andere Aktie ist eine Suche entfernt: <code>/</code> drücken, Namen tippen, und sie bleibt auf der Merkliste.",
+     "es": "La tabla muestra las acciones más negociadas, los movimientos del Nasdaq-100, las que suben y las que bajan. Haz clic en una fila o muévete con las flechas, y el panel de al lado dibuja la evolución de esa acción: hoy desde la apertura, o un mes, tres meses, el año en curso o un año completo. Cualquier otra acción está a una búsqueda: pulsa <code>/</code>, escribe su nombre y se queda en tu lista.",
+     "it": "La tabella elenca le azioni più scambiate, i movimenti del Nasdaq-100, i titoli in rialzo e in ribasso. Clicca una riga o spostati con le frecce, e il riquadro accanto disegna l'andamento di quel titolo: oggi dall'apertura, oppure un mese, tre mesi, l'anno in corso o un anno intero. Ogni altro titolo è a una ricerca di distanza: premi <code>/</code>, scrivi il nome e resta nella tua lista.",
+     "fr": "Le tableau liste les actions les plus échangées, les mouvements du Nasdaq-100, les hausses et les baisses. Cliquez sur une ligne ou déplacez-vous avec les flèches, et le panneau voisin trace le cours de cette action : aujourd'hui depuis l'ouverture, ou sur un mois, trois mois, l'année en cours ou un an. Toute autre action est à une recherche près : appuyez sur <code>/</code>, tapez son nom, et elle reste dans votre liste."
     }
    },
    {
@@ -315,20 +316,20 @@
     }
    },
    {
-    "id": "table",
+    "id": "search",
     "t": {
-     "en": "Quote table",
-     "de": "Kurstabelle",
-     "es": "Tabla de cotizaciones",
-     "it": "Tabella delle quotazioni",
-     "fr": "Tableau des cours"
+     "en": "Search",
+     "de": "Suche",
+     "es": "Búsqueda",
+     "it": "Ricerca",
+     "fr": "Recherche"
     },
     "p": {
-     "en": "Four sections, one row selected.",
-     "de": "Vier Abschnitte, eine Zeile ausgewählt.",
-     "es": "Cuatro secciones, una fila seleccionada.",
-     "it": "Quattro sezioni, una riga selezionata.",
-     "fr": "Quatre sections, une ligne sélectionnée."
+     "en": "Type a name or a symbol; Enter puts the stock on your watchlist.",
+     "de": "Name oder Kürzel tippen; Enter legt die Aktie auf die Merkliste.",
+     "es": "Escribe un nombre o un símbolo; Enter añade la acción a tu lista.",
+     "it": "Scrivi un nome o un simbolo; Invio aggiunge il titolo alla tua lista.",
+     "fr": "Tapez un nom ou un symbole ; Entrée ajoute l'action à votre liste."
     }
    },
    {
@@ -487,11 +488,11 @@
      "fr": "Puis-je suivre mes propres actions ou d'autres nouvelles ?"
     },
     "a": {
-     "en": "Other news: yes — the file <code>newsboat.urls</code> lists the feeds, one per line. Your own stocks: no. The table shows the day's market movers; a watch list is not part of wallstreet.",
-     "de": "Andere Nachrichten: ja — die Datei <code>newsboat.urls</code> führt die Feeds auf, einen je Zeile. Eigene Aktien: nein. Die Tabelle zeigt die Marktbewegungen des Tages; eine Beobachtungsliste gehört nicht zu wallstreet.",
-     "es": "Otras noticias: sí; el archivo <code>newsboat.urls</code> contiene los feeds, uno por línea. Tus propias acciones: no. La tabla muestra los movimientos del día; una lista de seguimiento no forma parte de wallstreet.",
-     "it": "Altre notizie: sì; il file <code>newsboat.urls</code> elenca i feed, uno per riga. Le tue azioni: no. La tabella mostra i movimenti di mercato del giorno; una watch list non fa parte di wallstreet.",
-     "fr": "D'autres nouvelles : oui ; le fichier <code>newsboat.urls</code> liste les flux, un par ligne. Vos propres actions : non. Le tableau montre les mouvements du jour ; une liste de suivi ne fait pas partie de wallstreet."
+     "en": "Both. Press <code>/</code>, type a name or a symbol and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file <code>newsboat.urls</code> lists the feeds, one per line.",
+     "de": "Beides. <code>/</code> drücken, Namen oder Kürzel tippen und ein Ergebnis übernehmen: Die Aktie kommt auf die Merkliste über der Tabelle, und ihr Verlauf öffnet sich. Für andere Nachrichten führt die Datei <code>newsboat.urls</code> die Feeds auf, einen je Zeile.",
+     "es": "Ambas cosas. Pulsa <code>/</code>, escribe un nombre o un símbolo y elige un resultado: la acción pasa a tu lista sobre la tabla y se abre su gráfico. Para otras noticias, el archivo <code>newsboat.urls</code> contiene los feeds, uno por línea.",
+     "it": "Entrambe le cose. Premi <code>/</code>, scrivi un nome o un simbolo e scegli un risultato: il titolo entra nella tua lista sopra la tabella e si apre il suo grafico. Per altre notizie, il file <code>newsboat.urls</code> elenca i feed, uno per riga.",
+     "fr": "Les deux. Appuyez sur <code>/</code>, tapez un nom ou un symbole et choisissez un résultat : l'action rejoint votre liste au-dessus du tableau et sa courbe s'ouvre. Pour d'autres nouvelles, le fichier <code>newsboat.urls</code> liste les flux, un par ligne."
     }
    },
    {

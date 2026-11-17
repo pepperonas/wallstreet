@@ -72,8 +72,20 @@ class Scripts(unittest.TestCase):
     def test_mouse_is_switched_on_only_in_an_own_session(self):
         # "mouse" is a session option: in somebody else's session it is theirs to set
         src = code(ROOT / "bin/wallstreet")
-        self.assertRegex(src, r'\[ -n "\$WALLSTREET_OWN_SESSION" \] && tmux set-option -t \$PKG mouse on')
-        self.assertEqual(src.count("mouse on"), 1)
+        block = re.search(r'if \[ -n "\$WALLSTREET_OWN_SESSION" \]; then\n(.*?)\nfi', src, re.S).group(1)
+        self.assertIn("set-option -t $PKG mouse on", block)
+        self.assertIn("status-format[0]", block)
+        rest = src.replace(block, "")
+        self.assertNotIn("mouse on", rest)
+        self.assertNotIn("status-", rest)
+
+    def test_the_status_line_names_keys_that_exist(self):
+        line = re.search(r'status-format\[0\] "([^"]*)"', (ROOT / "bin/wallstreet").read_text()).group(1)
+        data = (ROOT / "share/wallstreet/wsdata").read_text()
+        for word, proof in (("/ search", '("key", "/")'), ("1-5 span", '"12345"'), ("d remove", '("d", "delete", "backspace")')):
+            self.assertIn(word, line)
+            self.assertIn(proof, data)
+        self.assertNotIn("\\x", line, "an escape that the shell does not expand")
 
     def test_quotes_and_chart_run_the_interactive_commands(self):
         self.assertIn('"$WSDATA" browse', code(ROOT / "lib/wallstreet/quotes"))

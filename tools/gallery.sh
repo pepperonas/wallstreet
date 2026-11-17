@@ -7,7 +7,7 @@ set -eu
 cd "$(dirname "$0")/.."
 out=website/assets/gallery
 mkdir -p "$out"
-for id in wallstreet chart table headlines; do
+for id in wallstreet chart search headlines; do
 	magick "docs/screenshots/$id.png" -resize 1056x736 -background '#11121a' \
 		-gravity center -extent 1120x800 -strip -quality 88 "$out/$id.jpg"
 	cwebp -quiet -q 84 "$out/$id.jpg" -o "$out/$id.webp"
