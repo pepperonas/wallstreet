@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 7,
+ "asset_version": 8,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -100,7 +100,7 @@
   "feature_list": [
    "Interactive quote table: most active stocks, Nasdaq-100 movers, advancers and decliners; select a row by click or arrow keys",
    "Chart of the selected stock in braille characters: the trading day from the opening bell with the previous close as a line, one month, three months, year to date or a year",
-   "Search for any US-listed stock or ETF by name or symbol, with a watchlist that is kept between runs",
+   "Search for any US-listed stock or ETF by name or symbol, and for European stocks such as Volkswagen or Mercedes-Benz by name, WKN or ISIN (in euro, from Lang & Schwarz), with a watchlist that is kept between runs",
    "Three tickers: gainers in green, losers in red, headlines in yellow",
    "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
    "Data without an API key or an account: Nasdaq market movers and public RSS feeds",
@@ -112,7 +112,7 @@
   ],
   "limits": [
    "wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.",
-   "Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq. Charts go back one year at most.",
+   "Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Charts go back one year at most.",
    "The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.",
    "It needs tmux and Python 3.9 or newer; there is no Windows version.",
    "Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done."
@@ -488,8 +488,8 @@
      "fr": "Puis-je suivre mes propres actions ou d'autres nouvelles ?"
     },
     "a": {
-     "en": "Both. Press <code>/</code>, type a name or a symbol and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file <code>newsboat.urls</code> lists the feeds, one per line.",
-     "de": "Beides. <code>/</code> drücken, Namen oder Kürzel tippen und ein Ergebnis übernehmen: Die Aktie kommt auf die Merkliste über der Tabelle, und ihr Verlauf öffnet sich. Für andere Nachrichten führt die Datei <code>newsboat.urls</code> die Feeds auf, einen je Zeile.",
+     "en": "Both. Press <code>/</code>, type a name or a symbol — or a WKN or ISIN for a stock that is not listed in the US, such as Volkswagen — and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file <code>newsboat.urls</code> lists the feeds, one per line.",
+     "de": "Beides. <code>/</code> drücken, Namen oder Kürzel tippen — oder WKN bzw. ISIN bei Aktien, die nicht in den USA notieren, etwa Volkswagen — und ein Ergebnis übernehmen: Die Aktie kommt auf die Merkliste über der Tabelle, und ihr Verlauf öffnet sich. Für andere Nachrichten führt die Datei <code>newsboat.urls</code> die Feeds auf, einen je Zeile.",
      "es": "Ambas cosas. Pulsa <code>/</code>, escribe un nombre o un símbolo y elige un resultado: la acción pasa a tu lista sobre la tabla y se abre su gráfico. Para otras noticias, el archivo <code>newsboat.urls</code> contiene los feeds, uno por línea.",
      "it": "Entrambe le cose. Premi <code>/</code>, scrivi un nome o un simbolo e scegli un risultato: il titolo entra nella tua lista sopra la tabella e si apre il suo grafico. Per altre notizie, il file <code>newsboat.urls</code> elenca i feed, uno per riga.",
      "fr": "Les deux. Appuyez sur <code>/</code>, tapez un nom ou un symbole et choisissez un résultat : l'action rejoint votre liste au-dessus du tableau et sa courbe s'ouvre. Pour d'autres nouvelles, le fichier <code>newsboat.urls</code> liste les flux, un par ligne."

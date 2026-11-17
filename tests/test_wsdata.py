@@ -1296,6 +1296,15 @@ class Elsewhere(Base):
         self.assertAlmostEqual(month["points"][-1], 67.59)
         self.assertEqual(month["labels"][1], "11/16/2026")
 
+    def test_todays_close_in_the_history_gives_way_to_the_price_of_this_minute(self):
+        now = self.DAY / 1000 + 3600
+        days = [[self.DAY - (40 - i) * 86400000, 50.0 + i] for i in range(41)]      # the last one is today
+        with self.net(history=days), mock.patch.object(self.ws.time, "time", return_value=now):
+            month = self.ws.history(self.VW, "1m")
+        self.assertAlmostEqual(month["points"][-1], 67.59)
+        self.assertAlmostEqual(month["points"][-2], 89.0)
+        self.assertEqual(len([p for p in month["points"] if p > 89.5]), 0, "today is there once, not twice")
+
     def test_the_chart_names_the_currency(self):
         with self.net():
             lines = self.ws.chart_lines(self.ws.history(self.VW, "1d"), "1d", 90, 20)

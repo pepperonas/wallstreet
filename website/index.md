@@ -54,14 +54,14 @@ Files in the current release:
 
 **How do I update?** With Homebrew: `brew upgrade wallstreet`. Otherwise run the installer script again; it replaces the installed copy with the newest release.
 
-**Can I follow my own stocks or other news?** Both. Press `/`, type a name or a symbol and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file `newsboat.urls` lists the feeds, one per line.
+**Can I follow my own stocks or other news?** Both. Press `/`, type a name or a symbol — or a WKN or ISIN for a stock that is not listed in the US, such as Volkswagen — and take a result: the stock goes on your watchlist above the table and its chart opens. For other news, the file `newsboat.urls` lists the feeds, one per line.
 
 **Is the download genuine?** Every release is built by GitHub Actions from the tagged source. This page shows the SHA-256 of each file; compare it with `shasum -a 256`, or let the installer script do it.
 
 ## Limits
 
 - wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.
-- Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq. Charts go back one year at most.
+- Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Charts go back one year at most.
 - The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.
 - It needs tmux and Python 3.9 or newer; there is no Windows version.
 - Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done.

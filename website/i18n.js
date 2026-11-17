@@ -80,7 +80,7 @@ window.SITE_I18N = {
     "faq.q4": "Wie aktualisiere ich?",
     "faq.q4a": "Mit Homebrew: <code>brew upgrade wallstreet</code>. Sonst das Installationsskript erneut ausführen; es ersetzt die installierte Kopie durch das neueste Release.",
     "faq.q5": "Kann ich eigenen Aktien oder anderen Nachrichten folgen?",
-    "faq.q5a": "Beides. <code>/</code> drücken, Namen oder Kürzel tippen und ein Ergebnis übernehmen: Die Aktie kommt auf die Merkliste über der Tabelle, und ihr Verlauf öffnet sich. Für andere Nachrichten führt die Datei <code>newsboat.urls</code> die Feeds auf, einen je Zeile.",
+    "faq.q5a": "Beides. <code>/</code> drücken, Namen oder Kürzel tippen — oder WKN bzw. ISIN bei Aktien, die nicht in den USA notieren, etwa Volkswagen — und ein Ergebnis übernehmen: Die Aktie kommt auf die Merkliste über der Tabelle, und ihr Verlauf öffnet sich. Für andere Nachrichten führt die Datei <code>newsboat.urls</code> die Feeds auf, einen je Zeile.",
     "faq.q6": "Ist der Download echt?",
     "faq.q6a": "Jedes Release wird von GitHub Actions aus dem getaggten Quelltext gebaut. Diese Seite zeigt die SHA-256 jeder Datei; vergleiche sie mit <code>shasum -a 256</code> oder überlasse es dem Installationsskript.",
     "g1.t": "Der ganze Bildschirm",

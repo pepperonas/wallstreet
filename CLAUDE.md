@@ -59,6 +59,24 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
 - A lone ESC is the Escape key only once nothing follows (`parse_input(final=True)`);
   before 1.3.0 it stayed in the buffer forever.
 
+## Stocks outside the US (1.6.0)
+
+- Nasdaq's API knows US listings only (user report: Volkswagen and Mercedes-Benz not
+  found). Second source: Lang & Schwarz, `ls-tc.de/_rpc/json/` - search
+  (`.lstc/instrument/search/main?q=`), `instrument/chart/dataForInstrument?instrumentId=…
+  &series=intraday|history`; yesterday's close is the plotline `previousDay`. Timestamps
+  are real UTC milliseconds (unlike Nasdaq's).
+- Such a stock's symbol **is its ISIN** (`is_isin`): 12 characters, passes `SYMBOL`, and no
+  ticker can be mistaken for it - selection, watchlist and chart need no second field.
+  `label()` gives the WKN for the six-character column. `quote()` and `history()` branch
+  on `is_isin` first.
+- The search cache key is a hash of the query: a slug made "mercedes benz" and
+  "mercedes-benz" share one entry, and the empty answer of the first hid the second.
+- **onvista is out on purpose**: its chart endpoint answers 403 with a pointer to its terms
+  of use. Yahoo answers scripts with 429, stooq wants a browser check.
+- Tests cannot reach the network: `load()` replaces `OPENER.open`. A test needing an answer
+  patches `fetch`.
+
 ## Logo (1.4.0)
 
 - `wsdata logo` follows `selection.json` like the chart. PNG decoding is the script's own

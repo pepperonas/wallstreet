@@ -157,6 +157,15 @@ logo, below 110 columns the quote table and the tickers only.
 |---|---|
 | ![The chart pane: symbol, price, change, span tabs and the course since the start of the year](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The search: results for a query, one of them marked, the input line below](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/search.png) |
 
+### Stocks outside the US
+
+Nasdaq only knows what is listed on a US exchange. Search for *volkswagen*, *mercedes*,
+*siemens* or a WKN or ISIN and the hits marked `L&S EUR` come from the Lang & Schwarz
+Exchange instead: prices in euro, the day from 8:00 to 23:00 Berlin time, measured against
+the previous day's close. In the table such a stock shows its WKN (`766403`), in the chart
+its ISIN. A company listed on both sides — Apple, SAP — appears twice: once in dollars from
+Nasdaq, once in euro. The two prices are not converted into each other.
+
 ### The logo
 
 Beside the feed reader stands the logo of the company you selected. Where the terminal
@@ -175,6 +184,7 @@ needs libcaca) is still in the package but no longer on the default screen.
 |---|---|---|
 | quotes, gainers, losers | `api.nasdaq.com/api/marketmovers` — no key, no account | every 55 s |
 | search | `api.nasdaq.com/api/autocomplete/slookup` — stocks and ETFs; notes and mutual funds are left out, they have no course to draw | on typing, an hour per query |
+| stocks outside the US: search, quote, chart | `ls-tc.de` (Lang & Schwarz Exchange) — in euro, 8:00 to 23:00 Berlin time; found by name, WKN or ISIN | search an hour, the day every minute, daily closes every hour |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |
 | logo of the selected company | `assets.parqet.com/logos/symbol/<symbol>` (512 px), else `financialmodelingprep.com/image-stock/<symbol>.png` — these two learn which symbol you selected | once, kept 30 days |

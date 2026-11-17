@@ -7,6 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-17
+
+### Added
+- **Stocks that are not listed in the US.** The search now also asks Lang & Schwarz
+  (ls-tc.de), a German exchange: Volkswagen, Mercedes-Benz, Siemens, BMW and some thousand
+  more are found, by name, WKN or ISIN. They are quoted in euro, their day runs from 8:00 to
+  23:00 Berlin time, and they get chart, watchlist line and logo like every other stock.
+  In the narrow column they show their WKN; the chart's header names the ISIN and "EUR".
+- A name typed with spaces ("mercedes benz") is also tried with hyphens and by its first word.
+
+### Fixed
+- Before, a search for anything outside the US exchanges simply found nothing.
+
 ## [1.5.0] - 2026-11-17
 
 ### Added
