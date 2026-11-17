@@ -159,8 +159,12 @@ logo, below 110 columns the quote table and the tickers only.
 
 ### The logo
 
-Beside the feed reader stands the logo of the company you selected, drawn with half-block
-characters — two pixels per character cell. A logo drawn in white gets a dark tile, every
+Beside the feed reader stands the logo of the company you selected. Where the terminal
+draws pictures — iTerm2, WezTerm and other sixel terminals — it is a real picture of up to
+576 pixels a side; inside tmux that needs tmux 3.4 or newer with sixel support, and every
+terminal attached to the session has to be able to. Everywhere else it is drawn with
+half-block characters, two pixels per character cell, in 24-bit colour if the terminal has
+it. `WALLSTREET_LOGO=blocks` keeps the characters in any case. A logo drawn in white gets a dark tile, every
 other a light one. A company neither source has a logo for gets a monogram: the first two
 letters of its symbol on a colour of its own. The old news picture (`lib/wallstreet/img2txt`,
 needs libcaca) is still in the package but no longer on the default screen.
@@ -173,7 +177,7 @@ needs libcaca) is still in the package but no longer on the default screen.
 | search | `api.nasdaq.com/api/autocomplete/slookup` — stocks and ETFs; notes and mutual funds are left out, they have no course to draw | on typing, an hour per query |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |
-| logo of the selected company | `financialmodelingprep.com/image-stock/<symbol>.png`, else `assets.parqet.com/logos/symbol/<symbol>` — these two learn which symbol you selected | once, kept 30 days |
+| logo of the selected company | `assets.parqet.com/logos/symbol/<symbol>` (512 px), else `financialmodelingprep.com/image-stock/<symbol>.png` — these two learn which symbol you selected | once, kept 30 days |
 | headlines, feed reader | the RSS feeds in `share/wallstreet/newsboat.urls`: BBC, CNBC, MarketWatch, WSJ | every 5 min |
 
 The quotes are the day's movements on the US exchanges; outside trading hours the last

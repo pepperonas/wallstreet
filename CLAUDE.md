@@ -69,8 +69,17 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
   reaches the address. Demo mode never fetches: monogram.
 - Tile ground: dark for a logo that is mostly white **and** has transparent corners
   (Alnylam); a picture with a ground of its own keeps the light tile (Apple from FMP).
-- Half blocks: `▀` with the top pixel as foreground and the bottom one as background,
-  256 colours (`colour256`) so that tmux and termshot need no truecolor.
+- Three ways to draw (`graphics()`): **sixel** when every tmux client has the `sixel`
+  feature and reports a cell size (`#{client_termfeatures}`, `#{client_cell_width/height}`;
+  re-checked every 3 s because the terminal attaches after the pane starts), else half
+  blocks in 24-bit colour (`RGB` feature), else in 256 colours. A client without sixel
+  would be shown tmux's placeholder text - hence "every".
+- The picture is a square of whole cells, at most 576 px; tmux re-emits it at the pane's
+  position. Checked 2026-11-17 with a stand-in terminal (pty with a pixel size that answers
+  the device-attributes question with `4`) and `sixel2png` from libsixel: 544 x 544 px
+  arrived at the right cell. **Not seen in iTerm2 by me.**
+- Never test with `tmux kill-server` on the default socket: it ends the user's own
+  wallstreet/hollywood. Use `tmux -L <name>`.
 
 ## The chart's numbers (1.2.0)
 

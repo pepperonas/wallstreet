@@ -7,6 +7,22 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-17
+
+### Added
+- **The logo in real pixels.** Where the terminal draws pictures (sixel: iTerm2, WezTerm,
+  foot, Windows Terminal ...) the logo is a picture of up to 576 pixels a side instead of
+  30 character halves. Inside tmux this needs tmux 3.4 or newer built with sixel, and every
+  terminal attached to the session must be able to; otherwise the logo stays in characters.
+- Terminals without pictures but with true colour get the half blocks in 24-bit colour
+  instead of the 256-colour palette.
+- `WALLSTREET_LOGO=blocks` keeps the characters, `WALLSTREET_LOGO=sixel` asks for pixels.
+
+### Changed
+- Logos are fetched at 512 pixels (parqet.com first, financialmodelingprep.com as the
+  second source); small ones are enlarged smoothly. PNGs with 1, 2 or 4 bits a pixel are
+  read too.
+
 ## [1.4.0] - 2026-11-17
 
 ### Added

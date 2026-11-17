@@ -9,7 +9,7 @@
  "license": "Apache-2.0",
  "tls": "wildcard",
  "year": 2026,
- "asset_version": 6,
+ "asset_version": 7,
  "theme_source": "the colours of the program itself: the amber of the feed reader and the headline ticker as primary, the green and red of gains and losses, on the dark terminal background of the screenshots",
  "theme": {
   "bg": "#0c0d13",
@@ -210,11 +210,11 @@
      "fr": "Les nouvelles à côté des chiffres"
     },
     "p": {
-     "en": "A feed reader shows the latest articles and reloads by itself; next to it stands the logo of the company you selected, drawn with block characters. One list of feeds drives the reader and the ticker — edit it to follow other news.",
-     "de": "Ein Feedreader zeigt die neuesten Artikel und lädt von selbst nach; daneben steht das Logo der ausgewählten Firma, aus Blockzeichen gezeichnet. Eine Feed-Liste speist Reader und Laufband — wer andere Nachrichten will, ändert sie.",
-     "es": "Un lector de feeds muestra los últimos artículos y se recarga solo; a su lado está el logotipo de la empresa seleccionada, dibujado con caracteres de bloque. Una sola lista de feeds alimenta el lector y la cinta: edítala para seguir otras noticias.",
-     "it": "Un lettore di feed mostra gli ultimi articoli e si ricarica da solo; accanto c'è il logo dell'azienda selezionata, disegnato con caratteri a blocchi. Un unico elenco di feed alimenta il lettore e il nastro: modificalo per seguire altre notizie.",
-     "fr": "Un lecteur de flux affiche les derniers articles et se recharge tout seul ; à côté, le logo de l'entreprise sélectionnée, dessiné en caractères blocs. Une seule liste de flux alimente le lecteur et le bandeau : modifiez-la pour suivre d'autres nouvelles."
+     "en": "A feed reader shows the latest articles and reloads by itself; next to it stands the logo of the company you selected — a real picture in terminals that draw pixels, such as iTerm2, and block characters everywhere else. One list of feeds drives the reader and the ticker — edit it to follow other news.",
+     "de": "Ein Feedreader zeigt die neuesten Artikel und lädt von selbst nach; daneben steht das Logo der ausgewählten Firma — als echtes Bild in Terminals, die Pixel zeichnen, etwa iTerm2, und sonst aus Blockzeichen. Eine Feed-Liste speist Reader und Laufband — wer andere Nachrichten will, ändert sie.",
+     "es": "Un lector de feeds muestra los últimos artículos y se recarga solo; a su lado está el logotipo de la empresa seleccionada: una imagen real en terminales que dibujan píxeles, como iTerm2, y caracteres de bloque en los demás. Una sola lista de feeds alimenta el lector y la cinta: edítala para seguir otras noticias.",
+     "it": "Un lettore di feed mostra gli ultimi articoli e si ricarica da solo; accanto c'è il logo dell'azienda selezionata: un'immagine vera nei terminali che disegnano pixel, come iTerm2, e caratteri a blocchi altrove. Un unico elenco di feed alimenta il lettore e il nastro: modificalo per seguire altre notizie.",
+     "fr": "Un lecteur de flux affiche les derniers articles et se recharge tout seul ; à côté, le logo de l'entreprise sélectionnée : une vraie image dans les terminaux qui dessinent des pixels, comme iTerm2, et des caractères blocs ailleurs. Une seule liste de flux alimente le lecteur et le bandeau : modifiez-la pour suivre d'autres nouvelles."
     }
    },
    {

@@ -288,6 +288,13 @@ class Pixels(Base):
         self.assertGreaterEqual(height, 400, "real pixels, not thirty of them")
         self.assertIn("NVDA", ANSI.sub("", screen.split("\x1b\\")[-1]))
 
+    def test_a_narrow_pane_gets_a_picture_of_whole_cells_too(self):
+        # 28 usable columns of 14 px are 392 px: not a multiple of the 34 px a line is high
+        with mock.patch.object(self.ws, "fetch", return_value=png(4, 4, [[(200, 0, 0, 255)] * 4] * 4)):
+            screen = self.ws.logo_screen("NVDA", 30, 17, ("sixel", 14, 34))
+        width, height, _ = unsixel(re.search(r"\x1bP.*?\x1b\\", screen, re.S).group())
+        self.assertEqual((width, height), (374, 374))
+
     def test_true_colour_blocks_where_pixels_are_not_possible(self):
         with mock.patch.object(self.ws, "fetch", return_value=png(4, 4, [[(118, 185, 0, 255)] * 4] * 4)):
             rgb = self.ws.logo_screen("NVDA", 44, 17, ("rgb",))
