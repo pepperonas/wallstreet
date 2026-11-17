@@ -165,6 +165,138 @@ class Logo(Base):
         self.assertEqual(self.ws.colour256((0, 0, 0)), 16)
 
 
+def unsixel(data):
+    """The test's own sixel decoder: {(x, y): (r, g, b) in percent} and the declared size."""
+    body = re.fullmatch(r'\x1bP[0-9;]*q"1;1;(\d+);(\d+)(.*)\x1b\\', data, re.S)
+    width, height, rest = int(body.group(1)), int(body.group(2)), body.group(3)
+    palette, pixels, x, y, colour = {}, {}, 0, 0, None
+    for m in re.finditer(r"#(\d+);2;(\d+);(\d+);(\d+)|#(\d+)|!(\d+)(.)|([$-])|([?-~])", rest):
+        if m.group(1):
+            palette[int(m.group(1))] = tuple(int(m.group(i)) for i in (2, 3, 4))
+        elif m.group(5):
+            colour = int(m.group(5))
+        elif m.group(8) == "$":
+            x = 0
+        elif m.group(8) == "-":
+            x, y = 0, y + 6
+        else:
+            count, ch = (int(m.group(6)), m.group(7)) if m.group(6) else (1, m.group(9))
+            for _ in range(count):
+                for bit in range(6):
+                    if (ord(ch) - 63) >> bit & 1:
+                        pixels[(x, y + bit)] = palette[colour]
+                x += 1
+    return width, height, pixels
+
+
+class Pixels(Base):
+    demo = False
+
+    def grid(self):
+        # 20 x 15: red left, blue right, one green pixel
+        g = [[(248, 0, 0)] * 10 + [(0, 0, 248)] * 10 for _ in range(15)]
+        g[7][3] = (0, 248, 0)
+        return g
+
+    def test_a_sixel_picture_decodes_to_the_grid(self):
+        width, height, pixels = unsixel(self.ws.sixel(self.grid()))
+        self.assertEqual((width, height), (20, 15))
+        self.assertEqual(len(pixels), 300, "every pixel is set exactly where it belongs")
+        near = lambda a, b: all(abs(x - y) <= 2 for x, y in zip(a, b))
+        self.assertTrue(near(pixels[(0, 0)], (98, 0, 0)))
+        self.assertTrue(near(pixels[(19, 14)], (0, 0, 98)))
+        self.assertTrue(near(pixels[(3, 7)], (0, 98, 0)))
+        self.assertTrue(near(pixels[(4, 7)], (98, 0, 0)))
+
+    def test_a_sixel_picture_is_all_printable(self):
+        data = self.ws.sixel(self.grid())
+        self.assertTrue(data.startswith("\033P") and data.endswith("\033\\"))
+        self.assertNotRegex(data[2:-2], r"[^ -~]")
+
+    def test_more_colours_than_registers_still_fit(self):
+        grid = [[(x * 8 % 256, y * 8 % 256, (x + y) * 4 % 256) for x in range(64)] for y in range(36)]
+        data = self.ws.sixel(grid)
+        registers = {int(n) for n in re.findall(r"#(\d+);2;", data)}
+        self.assertLessEqual(len(registers), 255)
+        self.assertEqual({int(n) for n in re.findall(r"[$-]#(\d+)", "-" + data.split("q", 1)[1])} - registers, set())
+        self.assertEqual(len(unsixel(data)[2]), 64 * 36)
+
+    def test_palette_pngs_with_four_bits_are_decoded(self):
+        import struct, zlib
+        def chunk(kind, body):
+            return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+        # 3 x 2, palette of three colours, four bits a pixel: 0 1 2 / 2 1 0
+        raw = b"\0" + bytes([0x01, 0x20]) + b"\0" + bytes([0x21, 0x00])
+        data = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 3, 2, 4, 3, 0, 0, 0))
+                + chunk(b"PLTE", bytes([255, 0, 0, 0, 255, 0, 0, 0, 255])) + chunk(b"IDAT", zlib.compress(raw))
+                + chunk(b"IEND", b""))
+        _, _, rows = self.ws.png_pixels(data)
+        self.assertEqual([px[:3] for px in rows[0]], [(255, 0, 0), (0, 255, 0), (0, 0, 255)])
+        self.assertEqual([px[:3] for px in rows[1]], [(0, 0, 255), (0, 255, 0), (255, 0, 0)])
+
+    def test_a_small_logo_is_enlarged_smoothly(self):
+        black, white = (0, 0, 0, 255), (255, 255, 255, 255)
+        grid = self.ws.tile((2, 2, [[black, white], [black, white]]), 40, margin=0)
+        self.assertEqual(grid[20][0], (0, 0, 0))
+        self.assertEqual(grid[20][39], (255, 255, 255))
+        middle = grid[20][20][0]
+        self.assertTrue(60 < middle < 200, "a blend between the two, not a hard edge: %d" % middle)
+        self.assertEqual(sorted(px[0] for px in grid[20]), [px[0] for px in grid[20]])
+
+    def clients(self, *lines):
+        def fake(cmd, **kw):
+            return mock.Mock(stdout="$1\n" if cmd[1] == "display-message" else "".join(l + "\n" for l in lines))
+        return mock.patch.object(self.ws.subprocess, "run", side_effect=fake)
+
+    def mode(self, *lines, **env):
+        base = {"TMUX": "/tmp/x,1,0", "TMUX_PANE": "%1", "COLORTERM": "", "WALLSTREET_LOGO": "", "TERM_PROGRAM": ""}
+        with mock.patch.dict(os.environ, dict(base, **env)), self.clients(*lines):
+            return self.ws.graphics()
+
+    def test_pixels_when_every_terminal_can(self):
+        self.assertEqual(self.mode("RGB,sixel,title|14|34"), ("sixel", 14, 34))
+        self.assertEqual(self.mode("RGB,sixel|14|34", "sixel|8|16"), ("sixel", 8, 16))
+
+    def test_characters_when_one_terminal_cannot(self):
+        # tmux shows such a terminal a placeholder text instead of the picture
+        self.assertEqual(self.mode("RGB,sixel|14|34", "RGB,title|8|16"), ("rgb",))
+        self.assertEqual(self.mode("256,title|8|16"), ("256",))
+
+    def test_characters_without_a_cell_size_or_a_terminal(self):
+        self.assertEqual(self.mode("RGB,sixel|0|0"), ("rgb",))
+        self.assertEqual(self.mode(), ("256",))
+
+    def test_the_wish_for_characters_wins(self):
+        self.assertEqual(self.mode("RGB,sixel|14|34", WALLSTREET_LOGO="blocks"), ("rgb",))
+
+    def test_outside_tmux_only_known_terminals_get_pixels(self):
+        with mock.patch.object(self.ws, "cell_pixels", return_value=(9, 18)):
+            self.assertEqual(self.mode(TMUX="", TERM_PROGRAM="iTerm.app"), ("sixel", 9, 18))
+            self.assertEqual(self.mode(TMUX="", TERM_PROGRAM="Apple_Terminal", COLORTERM="truecolor"), ("rgb",))
+        with mock.patch.object(self.ws, "cell_pixels", return_value=(0, 0)):
+            self.assertEqual(self.mode(TMUX="", TERM_PROGRAM="iTerm.app"), ("256",))
+
+    def test_the_picture_fills_whole_cells_inside_the_pane(self):
+        with mock.patch.object(self.ws, "fetch", return_value=png(4, 4, [[(200, 0, 0, 255)] * 4] * 4)):
+            screen = self.ws.logo_screen("NVDA", 44, 17, ("sixel", 14, 34))
+        row, col = map(int, re.search(r"\x1b\[J\x1b\[(\d+);(\d+)H\x1bP", screen).groups())
+        width, height, _ = unsixel(re.search(r"\x1bP.*?\x1b\\", screen, re.S).group())
+        self.assertEqual(width, height)
+        self.assertEqual(height % 34, 0)
+        self.assertLessEqual(row - 1 + height // 34 + 2, 17)
+        self.assertLessEqual(col - 1 + -(-width // 14), 44)
+        self.assertGreaterEqual(height, 400, "real pixels, not thirty of them")
+        self.assertIn("NVDA", ANSI.sub("", screen.split("\x1b\\")[-1]))
+
+    def test_true_colour_blocks_where_pixels_are_not_possible(self):
+        with mock.patch.object(self.ws, "fetch", return_value=png(4, 4, [[(118, 185, 0, 255)] * 4] * 4)):
+            rgb = self.ws.logo_screen("NVDA", 44, 17, ("rgb",))
+            low = self.ws.logo_screen("NVDA", 44, 17, ("256",))
+        self.assertIn("38;2;118;185;0", rgb)
+        self.assertNotIn("38;2;", low)
+        self.assertNotIn("\x1bP", rgb + low)
+
+
 class LogoDemo(Base):
     def test_demo_mode_never_asks_the_network(self):
         with mock.patch.object(self.ws, "fetch") as fetch:

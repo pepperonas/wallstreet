@@ -39,6 +39,7 @@ import shutil
 import socket
 import stat
 import struct
+import subprocess
 import sys
 import tempfile
 import termios
@@ -673,8 +674,8 @@ def chart_lines(data, span, cols, lines):
 # light tile, drawn with half-block characters: every cell is two pixels, one
 # above the other, so a 100 x 100 picture survives as something one recognises.
 
-LOGO_URLS = ("https://financialmodelingprep.com/image-stock/%s.png",
-             "https://assets.parqet.com/logos/symbol/%s?format=png")
+LOGO_URLS = ("https://assets.parqet.com/logos/symbol/%s?format=png&size=512",     # 512 px a side
+             "https://financialmodelingprep.com/image-stock/%s.png")               # 100-250 px
 TILE = (236, 238, 242)
 TILE_DARK = (30, 32, 42)      # for a logo drawn in white
 FONT = {  # 5 x 7, for the monogram of a company without a logo
@@ -696,7 +697,8 @@ FONT = {  # 5 x 7, for the monogram of a company without a logo
 
 def png_pixels(data, limit=1024):
     """Decode a PNG into (width, height, rows of (r, g, b, a)).  Standard library only;
-    8-bit, not interlaced - which is what logos are.  Anything else raises ValueError."""
+    up to 8 bits a channel, not interlaced - which is what logos are.  Anything else
+    raises ValueError."""
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("not a PNG")
     pos, idat, palette, alpha, head = 8, [], None, b"", None
@@ -718,9 +720,11 @@ def png_pixels(data, limit=1024):
         raise ValueError("no header")
     width, height, depth, colour, _, _, interlace = head
     channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(colour)
-    if depth != 8 or interlace or not channels or not (0 < width <= limit and 0 < height <= limit):
+    packed = depth in (1, 2, 4) and colour in (0, 3)       # several pixels in one byte
+    if not (depth == 8 or packed) or interlace or not channels \
+            or not (0 < width <= limit and 0 < height <= limit):
         raise ValueError("unsupported PNG")
-    stride = width * channels
+    stride = (width * channels * depth + 7) // 8
     unpack = zlib.decompressobj()
     raw = unpack.decompress(b"".join(idat), (stride + 1) * height)
     if len(raw) < (stride + 1) * height:
@@ -744,6 +748,11 @@ def png_pixels(data, limit=1024):
                 a, b, c = abs(guess - left), abs(guess - up), abs(guess - corner)
                 line[i] = (line[i] + (left if a <= b and a <= c else up if b <= c else corner)) & 255
         prev = line
+        if packed:
+            # unpack to one byte a pixel; greys are spread over 0-255
+            mask, spread = (1 << depth) - 1, (255 // ((1 << depth) - 1) if colour == 0 else 1)
+            line = bytearray(((line[(x * depth) // 8] >> (8 - depth - (x * depth) % 8)) & mask) * spread
+                             for x in range(width))
         row = []
         for x in range(width):
             px = line[x * channels:(x + 1) * channels]
@@ -781,6 +790,22 @@ def tile(image, size, margin=2):
     out_w, out_h = max(1, int(round(width / scale))), max(1, int(round(height / scale)))
     grid = [[ground] * size for _ in range(size)]
     off_x, off_y = (size - out_w) // 2, (size - out_h) // 2
+    if scale < 1:
+        # enlarging: blend the four neighbours, or a small logo becomes a mosaic
+        for y in range(out_h):
+            fy = min(height - 1.0, max(0.0, (y + 0.5) * scale - 0.5))
+            y0 = int(fy); y1 = min(height - 1, y0 + 1); wy = fy - y0
+            for x in range(out_w):
+                fx = min(width - 1.0, max(0.0, (x + 0.5) * scale - 0.5))
+                x0 = int(fx); x1 = min(width - 1, x0 + 1); wx = fx - x0
+                r = g = b = a = 0.0
+                for (pr, pg, pb, pa), wgt in ((rows[y0][x0], (1 - wx) * (1 - wy)), (rows[y0][x1], wx * (1 - wy)),
+                                               (rows[y1][x0], (1 - wx) * wy), (rows[y1][x1], wx * wy)):
+                    r, g, b, a = r + pr * pa * wgt, g + pg * pa * wgt, b + pb * pa * wgt, a + pa * wgt
+                cover = a / 255.0
+                grid[off_y + y][off_x + x] = tuple(
+                    int(round((c / a if a else 0) * cover + gr * (1 - cover))) for c, gr in zip((r, g, b), ground))
+        return grid
     for y in range(out_h):
         for x in range(out_w):
             # average over the block of source pixels this pixel stands for
@@ -826,11 +851,22 @@ def monogram(symbol, size):
 NO_LOGO = set()      # symbols neither source had a picture for, so each is asked once
 
 
+GRIDS = {}           # (symbol, size) -> tile: decoding and scaling 512 px takes a moment
+
+
 def logo_grid(symbol, size):
     """The company's logo as a tile, or its monogram if there is none to be had."""
+    if (symbol, size) not in GRIDS:
+        if len(GRIDS) > 24:
+            GRIDS.clear()
+        GRIDS[(symbol, size)] = _logo_grid(symbol, size)
+    return GRIDS[(symbol, size)]
+
+
+def _logo_grid(symbol, size):
     if not DEMO and SYMBOL.fullmatch(symbol or "") and symbol not in NO_LOGO:
         for n, url in enumerate(LOGO_URLS):
-            name = "logo%d-%s.png" % (n, re.sub(r"[^A-Za-z0-9]", "_", symbol))
+            name = "logo-%s-%s.png" % (urllib.parse.urlsplit(url).hostname, re.sub(r"[^A-Za-z0-9]", "_", symbol))
             data = cached(name, 30 * 86400, lambda: fetch(url % urllib.parse.quote(symbol, safe=""), timeout=6))
             try:
                 return tile(png_pixels(data), size)
@@ -853,8 +889,8 @@ def colour256(rgb):
     return 16 + 36 * step(r) + 6 * step(g) + step(b)
 
 
-def logo_lines(symbol, cols, lines):
-    """The logo pane: the tile, centred, and the symbol below it."""
+def logo_lines(symbol, cols, lines, rgb=False):
+    """The logo pane in characters: the tile, centred, and the symbol below it."""
     size = max(8, min(cols - 2, (lines - 2) * 2) // 2 * 2)
     grid = logo_grid(symbol, size)
     pad = " " * max(0, (cols - 1 - size) // 2)
@@ -862,28 +898,149 @@ def logo_lines(symbol, cols, lines):
     for y in range(0, size, 2):
         row, last = [], None
         for x in range(size):
-            pair = (colour256(grid[y][x]), colour256(grid[y + 1][x]))
+            if rgb:
+                pair = grid[y][x] + grid[y + 1][x]
+            else:
+                pair = (colour256(grid[y][x]), colour256(grid[y + 1][x]))
             if pair != last:
-                row.append("\033[38;5;%d;48;5;%dm" % pair)
+                row.append(("\033[38;2;%d;%d;%d;48;2;%d;%d;%dm" if rgb else "\033[38;5;%d;48;5;%dm") % pair)
                 last = pair
             row.append("▀")                   # upper half block: top pixel fg, bottom pixel bg
         out.append(pad + "".join(row) + "\033[0m")
     out.append("")
-    out.append("\033[1;34m%s\033[0m" % (" " * max(0, (cols - 1 - len(symbol)) // 2) + symbol))
+    out.append(logo_caption(symbol, cols))
     return out[:lines]
+
+
+def logo_caption(symbol, cols):
+    return "\033[1;34m%s\033[0m" % (" " * max(0, (cols - 1 - len(symbol)) // 2) + symbol)
+
+
+def sixel(grid):
+    """The tile as a sixel picture: real pixels, for terminals that draw them."""
+    height, width = len(grid), len(grid[0])
+    # at most 255 colours: 5 bits a channel, and the rarest go to their nearest neighbour
+    key = lambda px: (px[0] >> 3, px[1] >> 3, px[2] >> 3)
+    count = {}
+    for row in grid:
+        for px in row:
+            k = key(px)
+            count[k] = count.get(k, 0) + 1
+    kept = sorted(count, key=count.get, reverse=True)[:255]
+    index = {k: n for n, k in enumerate(kept)}
+    for k in count:
+        if k not in index:
+            index[k] = index[min(kept, key=lambda c: sum((a - b) ** 2 for a, b in zip(c, k)))]
+    out = ['\033P0;1;0q"1;1;%d;%d' % (width, height)]
+    for k, n in ((k, index[k]) for k in kept):
+        out.append("#%d;2;%d;%d;%d" % ((n,) + tuple((c * 8 + 4) * 100 // 255 for c in k)))
+    for top in range(0, height, 6):
+        bands = {}
+        for bit, row in enumerate(grid[top:top + 6]):
+            for x, px in enumerate(row):
+                n = index[key(px)]
+                line = bands.get(n)
+                if line is None:
+                    line = bands[n] = [0] * width
+                line[x] |= 1 << bit
+        parts = []
+        for n, line in bands.items():
+            run, cells = None, []
+            for v in line + [None]:
+                if run and v == run[0]:
+                    run[1] += 1
+                    continue
+                if run:
+                    ch = chr(63 + run[0])
+                    cells.append(ch * run[1] if run[1] < 4 else "!%d%s" % (run[1], ch))
+                run = [v, 1]
+            parts.append("#%d%s" % (n, "".join(cells)))
+        out.append("$".join(parts) + "-")
+    out.append("\033\\")
+    return "".join(out)
+
+
+def cell_pixels():
+    """Width and height of a character cell in pixels as the terminal reports them, or (0, 0)."""
+    import fcntl
+    import termios
+    for fd in (2, 0, 1):
+        try:
+            rows, cols, xpx, ypx = struct.unpack("HHHH", fcntl.ioctl(fd, termios.TIOCGWINSZ, b"\0" * 8))
+        except (OSError, struct.error):
+            continue
+        if rows and cols and xpx and ypx:
+            return xpx // cols, ypx // rows
+    return 0, 0
+
+
+def graphics():
+    """How the logo can be drawn here: ("sixel", cell width, cell height), ("rgb",) or ("256",).
+    WALLSTREET_LOGO=blocks forces characters, =sixel forces pixels."""
+    want = os.environ.get("WALLSTREET_LOGO", "")
+    rgb = os.environ.get("COLORTERM", "") in ("truecolor", "24bit")
+    pane = os.environ.get("TMUX_PANE")
+    if os.environ.get("TMUX") and pane:
+        # inside tmux the clients decide: every terminal looking at this pane must be able to
+        try:
+            session = subprocess.run(["tmux", "display-message", "-p", "-t", pane, "#{session_id}"],
+                                     capture_output=True, text=True, timeout=3).stdout.strip()
+            clients = [l.split("|") for l in subprocess.run(
+                ["tmux", "list-clients", "-t", session, "-F",
+                 "#{client_termfeatures}|#{client_cell_width}|#{client_cell_height}"],
+                capture_output=True, text=True, timeout=3).stdout.splitlines() if l.count("|") == 2]
+        except (OSError, subprocess.SubprocessError):
+            clients = []
+        feats = [set(c[0].split(",")) for c in clients]
+        rgb = bool(feats) and all("RGB" in f for f in feats)
+        cells = [(int(c[1] or 0), int(c[2] or 0)) for c in clients if c[1].isdigit() and c[2].isdigit()]
+        if want != "blocks" and feats and all("sixel" in f for f in feats) \
+                and len(cells) == len(clients) and all(w > 0 and h > 0 for w, h in cells):
+            return ("sixel", min(w for w, _ in cells), min(h for _, h in cells))
+        if want == "sixel":
+            return ("sixel", 10, 20)      # asked for: a guess at the cell, when no client reports one
+    elif want != "blocks" and (want == "sixel" or os.environ.get("TERM_PROGRAM") in ("iTerm.app", "WezTerm")):
+        width, height = cell_pixels()
+        if width and height:
+            return ("sixel", width, height)
+    return ("rgb",) if rgb else ("256",)
+
+
+def logo_screen(symbol, cols, lines, mode):
+    """What to write to show the logo: a picture where the terminal draws pixels,
+    half blocks elsewhere."""
+    if mode[0] != "sixel":
+        lines_ = logo_lines(symbol, cols, lines, rgb=mode[0] == "rgb")
+        return "\033[H" + "".join(l + "\033[K\n" for l in lines_[:-1]) + lines_[-1] + "\033[K\033[J"
+    cell_w, cell_h = mode[1], mode[2]
+    # a square of whole cells, never larger than a logo is delivered
+    side = min((cols - 2) * cell_w, (lines - 2) * cell_h, 512 + 64)
+    side = max(cell_h, side // cell_h * cell_h)
+    used_cols, used_rows = -(-side // cell_w), side // cell_h
+    top = max(0, (lines - 2 - used_rows) // 2)
+    left = max(0, (cols - used_cols) // 2)
+    picture = sixel(logo_grid(symbol, side))
+    return ("\033[H\033[J\033[%d;%dH" % (top + 1, left + 1) + picture
+            + "\033[%d;1H" % min(lines, top + used_rows + 2) + logo_caption(symbol, cols))
 
 
 def cmd_logo():
     """The logo of the selected stock; follows the selection file."""
-    seen = None
+    seen, mode, tick = None, ("256",), 0
     sys.stdout.write("\033[?25l")
     try:
         while True:
-            now = (read_selection()[0], tuple(term_size()))
+            if tick % 10 == 0:
+                mode = graphics()         # a terminal may attach later, or another one
+            tick += 1
+            now = (read_selection()[0], tuple(term_size()), mode)
             if now != seen:
                 seen = now
-                draw(logo_lines(now[0], now[1][0], now[1][1]) if now[0] else
-                     ["", "\033[90m%s\033[0m" % "Select a stock."])
+                if now[0]:
+                    sys.stdout.write(logo_screen(now[0], now[1][0], now[1][1], mode))
+                    sys.stdout.flush()
+                else:
+                    draw(["", "\033[90m%s\033[0m" % "Select a stock."])
             time.sleep(0.3)
     finally:
         sys.stdout.write("\033[?25h")
