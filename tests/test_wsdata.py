@@ -68,6 +68,10 @@ class Logo(Base):
     demo = False
     RED, CLEAR = (200, 0, 0, 255), (0, 0, 0, 0)
 
+    def setUp(self):
+        super().setUp()
+        self.ws.is_etf = lambda symbol: False      # these tests count the requests for pictures
+
     def picture(self):
         # left half red, right half transparent
         return png(8, 8, [[self.RED] * 4 + [self.CLEAR] * 4 for _ in range(8)])
@@ -1346,3 +1350,145 @@ class Elsewhere(Base):
             self.ws.logo_grid(self.VW, 12)
         self.assertEqual([c[0][0] for c in fetch.call_args_list if "logos" in c[0][0]],
                          ["https://assets.parqet.com/logos/isin/%s?format=png&size=512" % self.VW])
+
+
+class Indices(Base):
+    """Indices come from ING, by ISIN; the table shows their short names."""
+    demo = False
+    SPX, DAX = "US78378X1072", "DE0008469008"
+    DAY = 1794812400000        # Monday 2026-11-16, 08:00 in Berlin
+
+    def net(self, intraday=None, year=None):
+        def answer(url, timeout=15):
+            if "wertpapiere.ing.de" in url:
+                if url.endswith("Intraday"):
+                    points = intraday if intraday is not None else [[self.DAY + i * 60000, 7400.0 + i] for i in range(100)]
+                else:
+                    # daily bars up to Friday the 13th
+                    points = year if year is not None else [[self.DAY - 3 * 86400000 - (249 - i) * 86400000, 7000.0 + i] for i in range(250)]
+                return json.dumps({"instruments": [{"data": points}]}).encode()
+            if "autocomplete" in url:
+                return b'{"data": []}'
+            if "instrument/search" in url:
+                return b"[]"
+            raise OSError("unexpected " + url)
+        return mock.patch.object(self.ws, "fetch", side_effect=answer)
+
+    def test_every_index_is_an_isin_with_a_short_name_for_the_column(self):
+        for isin, short, name, _ in self.ws.INDICES:
+            self.assertTrue(self.ws.is_isin(isin), isin)
+            self.assertLessEqual(len(short), 6)
+            self.assertNotEqual(short.lower(), name.lower(), "the line would say it twice")
+            self.assertEqual(self.ws.label(isin), short)
+        self.assertEqual(len({i[0] for i in self.ws.INDICES}), len(self.ws.INDICES))
+
+    def test_the_search_finds_an_index_by_the_names_people_type(self):
+        first = lambda q: [r["label"] for r in self.ws.index_search(q)]
+        self.assertEqual(first("s&p 500"), ["SPX"])
+        self.assertEqual(first("sp500"), ["SPX"])
+        self.assertEqual(first("dow"), ["DJI"])
+        self.assertEqual(first("nasdaq"), ["NDX"])
+        self.assertEqual(first("euro stoxx"), ["SX5E"])
+        self.assertEqual(first("nikkei"), ["N225"])
+        self.assertEqual(first("dax"), ["DAX", "MDAX", "TECDAX", "SDAX"])
+        self.assertEqual(first("da"), ["DAX", "MDAX", "TECDAX", "SDAX"],
+                         "two letters match the beginning of a word - not the middle of standard or nasdaq")
+        self.assertEqual(first("x"), [])
+        self.assertEqual(first("volkswagen"), [])
+
+    def test_an_index_stands_first_among_the_results(self):
+        with self.net():
+            found = self.ws.search("dax")
+        self.assertEqual(found[0], {"symbol": self.DAX, "label": "DAX", "name": "Deutscher Aktienindex", "exchange": "INDEX"})
+
+    def test_the_day_is_measured_against_the_last_close_before_it(self):
+        with self.net():
+            q = self.ws.quote(self.SPX)
+            day = self.ws.history(self.SPX, "1d")
+        self.assertAlmostEqual(q["last"], 7499.0)
+        self.assertAlmostEqual(q["change"], 7499.0 - 7249.0)        # Friday's bar is the last one before Monday
+        self.assertEqual(day["reference"], 7249.0)
+        self.assertEqual(day["labels"], ("08:00", "09:39"))
+        self.assertEqual(day["symbol"], "SPX")
+        self.assertNotIn("currency", day)
+
+    def test_a_bar_of_the_same_day_is_not_yesterday(self):
+        year = [[self.DAY - 86400000 * (3 - i), 7000.0 + i] for i in range(4)]     # Friday .. Monday
+        year[-1][0] = self.DAY - 8 * 3600000                                       # Monday 00:00
+        with self.net(year=year):
+            self.assertEqual(self.ws.history(self.SPX, "1d")["reference"], 7002.0)
+
+    def test_longer_spans_end_with_the_value_of_this_minute(self):
+        now = self.DAY / 1000 + 7200
+        with self.net(), mock.patch.object(self.ws.time, "time", return_value=now):
+            month = self.ws.history(self.SPX, "1m")
+        self.assertAlmostEqual(month["points"][-1], 7499.0)
+        self.assertAlmostEqual(month["points"][-2], 7249.0)
+        self.assertEqual(month["labels"][1], "11/16/2026")
+        self.assertTrue(20 <= len(month["points"]) <= 34)
+
+    def test_the_table_begins_with_the_indices(self):
+        with self.net():
+            rows = self.ws.table_rows(100, 40)
+        self.assertEqual(ANSI.sub("", rows[0][0]), "INDICES")
+        self.assertEqual([r[1] for r in rows[2:2 + self.ws.INDEX_ROWS]], [i[0] for i in self.ws.INDICES[:self.ws.INDEX_ROWS]])
+        line = ANSI.sub("", rows[2][0])
+        self.assertTrue(line.startswith("SPX    S&P 500"))
+        self.assertIn("7499.00", line)
+        self.assertIn("+3.45%", line)
+        self.assertEqual({r[2] for r in rows[:7]}, {"index"}, "d must not remove an index")
+
+    def test_without_an_answer_there_is_no_index_section(self):
+        self.assertNotIn("INDICES", [ANSI.sub("", r[0]) for r in self.ws.table_rows(100, 40)])
+
+    def test_demo_mode_shows_no_index_and_asks_nobody(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = load(True, tmp)
+            with mock.patch.object(ws, "fetch") as fetch:
+                rows = ws.table_rows(100, 40)
+            fetch.assert_not_called()
+            self.assertNotIn("INDICES", [ANSI.sub("", r[0]) for r in rows])
+
+    def test_a_broken_answer_is_no_index(self):
+        for bad in ([], [["x"]], "nope"):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.ws = load(False, tmp)
+                with self.net(intraday=bad):
+                    self.assertIsNone(self.ws.quote(self.SPX))
+                    self.assertIsNone(self.ws.history(self.SPX, "1d"))
+
+
+class FundLogos(Base):
+    demo = False
+
+    def asked(self, etf):
+        self.ws.is_etf = lambda symbol: etf
+        with mock.patch.object(self.ws, "fetch", return_value=b"nothing") as fetch:
+            self.ws.logo_grid("SPY", 12)
+        return [urllib_host(c[0][0]) for c in fetch.call_args_list]
+
+    def test_a_fund_gets_the_logo_of_its_family_first(self):
+        self.assertEqual(self.asked(True), ["financialmodelingprep.com", "assets.parqet.com"])
+
+    def test_a_company_keeps_the_sharper_source_first(self):
+        self.assertEqual(self.asked(False), ["assets.parqet.com", "financialmodelingprep.com"])
+
+    def test_nasdaq_says_what_is_a_fund(self):
+        info = json.dumps({"data": {"primaryData": {"lastSalePrice": "1"}}}).encode()
+
+        def answer(url, timeout=15):
+            if "assetclass=etf" in url:
+                return info
+            return b'{"data": null}'
+        with mock.patch.object(self.ws, "fetch", side_effect=answer):
+            self.assertTrue(self.ws.is_etf("SPY"))
+        with mock.patch.object(self.ws, "fetch", return_value=info):
+            self.assertFalse(self.ws.is_etf("NVDA"))
+        with mock.patch.object(self.ws, "fetch") as fetch:
+            self.assertFalse(self.ws.is_etf("DE0007664039"))
+        fetch.assert_not_called()
+
+
+def urllib_host(url):
+    import urllib.parse
+    return urllib.parse.urlsplit(url).hostname

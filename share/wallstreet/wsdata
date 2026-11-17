@@ -483,6 +483,8 @@ def ls_instrument(isin):
 
 def label(symbol):
     """What stands in the narrow symbol column: the ticker, or the WKN of an ISIN."""
+    if symbol in INDEX:
+        return INDEX[symbol][0]
     if DEMO or not is_isin(symbol):
         return symbol
     found = ls_instrument(symbol)
@@ -553,6 +555,112 @@ def ls_history(isin, span):
                 labels=(berlin(days[0][0], "%m/%d/%Y"), berlin(days[-1][0], "%m/%d/%Y")))
 
 
+# ------------------------------------------------------------------ indices
+#
+# An index is not traded, so neither exchange above has it.  ING publishes the course of
+# the large ones for its customers' charts: an indication from 8:00 to 22:00 Berlin time,
+# also while the index's own exchange is closed.  Like the stocks from Lang & Schwarz an
+# index is known here by its ISIN; the table shows the short name.
+
+INDICES = (("US78378X1072", "SPX", "S&P 500", "sp500 s&p500 standard poors"),
+           ("US2605661048", "DJI", "Dow Jones", "dow30 djia industrial"),
+           ("US6311011026", "NDX", "NASDAQ 100", "nasdaq100 ndx"),
+           ("DE0008469008", "DAX", "Deutscher Aktienindex", "dax40"),
+           ("EU0009658145", "SX5E", "EURO STOXX 50", "eurostoxx stoxx50 estx50"),
+           ("DE0008467416", "MDAX", "Mid-Cap-DAX", ""),
+           ("DE0007203275", "TECDAX", "Technologie-DAX", ""),
+           ("DE0009653386", "SDAX", "Small-Cap-DAX", ""),
+           ("FR0003500008", "CAC", "CAC 40", "cac40 paris"),
+           ("CH0009980894", "SMI", "Swiss Market Index", "schweiz"),
+           ("JP9010C00002", "N225", "Nikkei 225", "nikkei225 japan tokio"),
+           ("HK0000004322", "HSI", "Hang Seng", "hangseng hongkong"))
+INDEX = {isin: (short, name) for isin, short, name, _ in INDICES}
+INDEX_ROWS = 5           # how many of them stand in the table; the others are found by the search
+ING = "https://component-api.wertpapiere.ing.de/api/v1/charts/shm/%s?timeRange=%s"
+
+
+def is_index(symbol):
+    return symbol in INDEX
+
+
+def index_search(query):
+    """The indices QUERY names: by the beginning of a word of the name, the short name or
+    a by-name, or - from three characters - by any part of name or short name."""
+    squash = lambda text: re.sub(r"[^a-z0-9]", "", text.lower())
+    q = squash(query)
+    if len(q) < 2:
+        return []
+    out = []
+    for isin, short, name, more in INDICES:
+        words = [squash(w) for w in (name + " " + short + " " + more).replace("-", " ").split()]
+        whole = (squash(name), squash(short))
+        if any(w.startswith(q) for w in words + list(whole)) or (len(q) >= 3 and any(q in w for w in whole)):
+            out.append({"symbol": isin, "label": short, "name": name, "exchange": "INDEX"})
+    return out
+
+
+def ing_series(isin, span, ttl):
+    """[(milliseconds, value)] of one index; span is "Intraday" or "OneYear"."""
+    try:
+        data = json.loads(cached("ing-%s-%s.json" % (span, isin), ttl, lambda: fetch(ING % (isin, span))))
+        return [(int(t), float(v)) for t, v in data["instruments"][0]["data"] if v is not None]
+    except (ValueError, KeyError, TypeError, IndexError):
+        return []
+
+
+def index_day(isin):
+    """(the day's points, the close of the day before or None)."""
+    points = ing_series(isin, "Intraday", 60)
+    if not points:
+        return [], None
+    day = berlin(points[0][0], "%Y%m%d")
+    before = [v for t, v in ing_series(isin, "OneYear", 3600) if berlin(t, "%Y%m%d") < day]
+    return points, (before[-1] if before else None)
+
+
+def index_quote(isin):
+    points, previous = index_day(isin)
+    if not points:
+        return None
+    last = points[-1][1]
+    change = last - previous if previous else 0.0
+    return {"last": last, "change": change, "pct": change / previous * 100 if previous else 0.0, "extended": None}
+
+
+def index_history(isin, span):
+    short, name = INDEX[isin]
+    base = {"symbol": short, "name": name, "dim_from": None, "extended": None}
+    points, previous = index_day(isin)
+    if span == "1d":
+        if len(points) < 2:
+            return None
+        return dict(base, points=[v for _, v in points], last=points[-1][1], reference=previous,
+                    reference_line=previous is not None,
+                    labels=(berlin(points[0][0], "%H:%M"), berlin(points[-1][0], "%H:%M")))
+    start = (time.time() - span_days(span) * 86400) * 1000
+    days = [(t, v) for t, v in ing_series(isin, "OneYear", 3600) if t >= start]
+    if points and days and berlin(days[-1][0], "%Y%m%d") >= berlin(points[0][0], "%Y%m%d"):
+        days[-1] = (days[-1][0], points[-1][1])        # the day's bar follows the day
+    elif points and days:
+        days.append(points[-1])
+    if len(days) < 2:
+        return None
+    return dict(base, points=[v for _, v in days], last=days[-1][1], reference=days[0][1], reference_line=False,
+                labels=(berlin(days[0][0], "%m/%d/%Y"), berlin(days[-1][0], "%m/%d/%Y")))
+
+
+def index_rows():
+    """The first indices as table rows; an index without an answer is left out."""
+    out = []
+    for isin, short, name, _ in INDICES[:INDEX_ROWS]:
+        q = None if DEMO else index_quote(isin)
+        if q:
+            out.append({"symbol": isin, "label": short, "name": name, "lastSalePrice": price(q["last"]),
+                        "lastSaleChange": "%+.2f" % q["change"], "change": "%+.2f%%" % q["pct"],
+                        "deltaIndicator": "down" if q["change"] < 0 else "up"})
+    return out
+
+
 def number(value):
     """A price or a change as the API writes it: "$1,010.50", "-6.71", "-4.12%"."""
     return float(str(value).replace("$", "").replace(",", "").replace("%", ""))
@@ -570,8 +678,19 @@ def nasdaq(symbol, what, name, ttl, query=""):
         except (ValueError, KeyError, TypeError):
             continue
         if data and (what != "chart" or data.get("chart")):
+            ASSET[symbol] = asset
             return data
     return None
+
+
+ASSET = {}           # symbol -> "stocks" or "etf", as far as Nasdaq has answered for it
+
+
+def is_etf(symbol):
+    """Whether Nasdaq keeps this symbol as a fund."""
+    if symbol not in ASSET and not is_isin(symbol):
+        nasdaq(symbol, "info", "info", 60)
+    return ASSET.get(symbol) == "etf"
 
 
 def quote(symbol):
@@ -582,6 +701,8 @@ def quote(symbol):
     after-hours trade as the primary one - which is why the chart must not take the newest
     price for the day's result.
     """
+    if is_index(symbol):
+        return index_quote(symbol)
     if is_isin(symbol):
         return ls_quote(symbol)
     data = nasdaq(symbol, "info", "info", 60)
@@ -639,6 +760,8 @@ def history(symbol, span):
     """
     if DEMO:
         return demo_history(symbol, span)
+    if is_index(symbol):
+        return index_history(symbol, span)
     if is_isin(symbol):
         return ls_history(symbol, span)
     try:
@@ -991,7 +1114,10 @@ def logo_grid(symbol, size):
 
 def _logo_grid(symbol, size):
     if not DEMO and SYMBOL.fullmatch(symbol or "") and symbol not in NO_LOGO:
-        for n, url in enumerate((LOGO_ISIN_URL,) if is_isin(symbol) else LOGO_URLS):
+        # a fund is known by the name of its family ("SPDR", "Vanguard"), and that is what
+        # the second source draws; the first shows the issuer's mark, which nobody knows
+        urls = (LOGO_ISIN_URL,) if is_isin(symbol) else LOGO_URLS[::-1] if is_etf(symbol) else LOGO_URLS
+        for n, url in enumerate(urls):
             name = "logo-%s-%s.png" % (urllib.parse.urlsplit(url).hostname, re.sub(r"[^A-Za-z0-9]", "_", symbol))
             data = cached(name, 30 * 86400, lambda: fetch(url % urllib.parse.quote(symbol, safe=""), timeout=6))
             try:
@@ -1376,6 +1502,7 @@ def search(query):
     # both get their share of the ten lines
     # that search wants the name as the exchange writes it ("mercedes-benz"); a name typed
     # with spaces is tried with hyphens and then by its first word
+    out = index_search(query) + out
     elsewhere = []
     for variant in dict.fromkeys((query, query.replace(" ", "-"), query.split(" ")[0])):
         elsewhere = ls_search(variant)
@@ -1411,7 +1538,7 @@ def table_rows(cols, lines):
     """The quote table as [(text, symbol or None, section)], cut to LINES like cmd_table."""
     out = []
     name_w = max(8, cols - 42)
-    sections = [("WATCHLIST", "watch", watch_rows())]
+    sections = [("INDICES", "index", index_rows()), ("WATCHLIST", "watch", watch_rows())]
     sections += [("INDEX MOVERS" if DEMO and key == "Nasdaq100Movers" else title, key, rows(key))
                  for title, key in SECTIONS]
     for title, key, data in sections:
