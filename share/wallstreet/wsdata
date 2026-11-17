@@ -29,6 +29,8 @@
 # Licensed under the Apache License, Version 2.0, like the rest of this
 # package.  Python standard library only.
 
+import datetime
+import hashlib
 import ipaddress
 import json
 import os
@@ -433,6 +435,124 @@ def demo_history(symbol, span):
             "reference_line": span == "1d", "dim_from": None, "extended": None}
 
 
+# ------------------------------------------------------- stocks outside the US
+#
+# Nasdaq only knows what is listed on a US exchange.  Everything else - Volkswagen,
+# Mercedes-Benz, Siemens - comes from Lang & Schwarz (ls-tc.de), a German exchange that
+# trades some thousand stocks from 8:00 to 23:00 and quotes them in euro.  Such a stock
+# is known here by its ISIN, which no ticker symbol can be mistaken for.
+
+ISIN = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
+LS = "https://www.ls-tc.de/_rpc/json/"
+
+
+def is_isin(symbol):
+    return bool(ISIN.fullmatch(symbol or ""))
+
+
+def ls_search(query):
+    """What Lang & Schwarz finds for QUERY: [{"symbol" (the ISIN), "label" (the WKN),
+    "name", "exchange", "id"}], stocks and funds only."""
+    # the key keeps "mercedes benz" and "mercedes-benz" apart: they are answered differently
+    key = "ls-search-%s.json" % hashlib.sha1(query.lower().encode()).hexdigest()[:20]
+    url = LS + ".lstc/instrument/search/main?localeId=2&q=" + urllib.parse.quote(query, safe="")
+    try:
+        data = json.loads(cached(key, 3600, lambda: fetch(url)))
+    except ValueError:
+        return []
+    out = []
+    for item in data if isinstance(data, list) else []:
+        try:
+            isin = clean(item.get("isin") or "")
+            if item.get("categorySymbol") not in ("STK", "ETF") or not is_isin(isin):
+                continue
+            out.append({"symbol": isin, "label": clean(item.get("wkn") or "")[:6],
+                        "name": clean(item.get("displayname") or isin)[:80],
+                        "exchange": "L&S EUR", "id": int(item["instrumentId"])})
+        except (AttributeError, KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+def ls_instrument(isin):
+    """The entry of one ISIN at Lang & Schwarz, or None."""
+    if not is_isin(isin):
+        return None
+    return next((r for r in ls_search(isin) if r["symbol"] == isin), None)
+
+
+def label(symbol):
+    """What stands in the narrow symbol column: the ticker, or the WKN of an ISIN."""
+    if DEMO or not is_isin(symbol):
+        return symbol
+    found = ls_instrument(symbol)
+    return (found and found["label"]) or symbol
+
+
+def ls_series(isin, series, ttl):
+    """([(milliseconds, price)], yesterday's close or None) of one ISIN; series is
+    "intraday" (a point a minute) or "history" (a point a day)."""
+    found = ls_instrument(isin)
+    if not found:
+        return [], None
+    url = LS + "instrument/chart/dataForInstrument?instrumentId=%d&marketId=1&quotetype=mid&series=%s&localeId=2" % (
+        found["id"], series)
+    try:
+        data = json.loads(cached("ls-%s-%s.json" % (series, isin), ttl, lambda: fetch(url)))
+        points = [(int(t), float(v)) for t, v in data["series"][series]["data"] if v is not None]
+        previous = next((float(l["value"]) for l in (data.get("info") or {}).get("plotlines") or []
+                         if l.get("id") == "previousDay"), None)
+    except (ValueError, KeyError, TypeError):
+        return [], None
+    return points, previous
+
+
+def berlin(ms, fmt):
+    """A moment as the exchange's clock shows it."""
+    try:
+        import zoneinfo
+        zone = zoneinfo.ZoneInfo("Europe/Berlin")
+    except Exception:                       # no zone data on this machine: Central European Time
+        zone = datetime.timezone(datetime.timedelta(hours=1))
+    return datetime.datetime.fromtimestamp(ms / 1000, zone).strftime(fmt)
+
+
+def ls_quote(isin):
+    points, previous = ls_series(isin, "intraday", 60)
+    if not points:
+        return None
+    last = points[-1][1]
+    change = last - previous if previous else 0.0
+    return {"last": last, "change": change, "pct": change / previous * 100 if previous else 0.0,
+            "extended": None, "currency": "EUR"}
+
+
+def ls_history(isin, span):
+    found = ls_instrument(isin)
+    if not found:
+        return None
+    base = {"symbol": isin, "name": found["name"], "dim_from": None, "extended": None, "currency": "EUR"}
+    if span == "1d":
+        points, previous = ls_series(isin, "intraday", 60)
+        if len(points) < 2:
+            return None
+        return dict(base, points=[v for _, v in points], last=points[-1][1], reference=previous,
+                    reference_line=previous is not None,
+                    labels=(berlin(points[0][0], "%H:%M"), berlin(points[-1][0], "%H:%M")))
+    days, _ = ls_series(isin, "history", 3600)
+    start = (time.time() - span_days(span) * 86400) * 1000
+    days = [(t, v) for t, v in days if t >= start]
+    q = ls_quote(isin)
+    if q and days and berlin(days[-1][0], "%Y%m%d") == berlin(time.time() * 1000, "%Y%m%d"):
+        days[-1] = (days[-1][0], q["last"])            # today's point follows the day
+    elif q and days:
+        days.append((int(time.time() * 1000), q["last"]))
+    if len(days) < 2:
+        return None
+    return dict(base, points=[v for _, v in days], last=days[-1][1], reference=days[0][1], reference_line=False,
+                labels=(berlin(days[0][0], "%m/%d/%Y"), berlin(days[-1][0], "%m/%d/%Y")))
+
+
 def number(value):
     """A price or a change as the API writes it: "$1,010.50", "-6.71", "-4.12%"."""
     return float(str(value).replace("$", "").replace(",", "").replace("%", ""))
@@ -462,6 +582,8 @@ def quote(symbol):
     after-hours trade as the primary one - which is why the chart must not take the newest
     price for the day's result.
     """
+    if is_isin(symbol):
+        return ls_quote(symbol)
     data = nasdaq(symbol, "info", "info", 60)
     try:
         def part(block):
@@ -517,6 +639,8 @@ def history(symbol, span):
     """
     if DEMO:
         return demo_history(symbol, span)
+    if is_isin(symbol):
+        return ls_history(symbol, span)
     try:
         if span == "1d":
             data = nasdaq(symbol, "chart", "chart-1d", 60)
@@ -620,7 +744,8 @@ def chart_lines(data, span, cols, lines):
     colour = "32" if change >= 0 else "31"
     name_w = max(0, width - len(data["symbol"]) - 1)
     out.append("\033[1;34m%s\033[0m %s" % (data["symbol"], data["name"][:name_w]))
-    head, plain = "\033[1;35m%s\033[0m" % price(data["last"]), price(data["last"])
+    shown = price(data["last"]) + (" " + data["currency"] if data.get("currency") else "")
+    head, plain = "\033[1;35m%s\033[0m" % shown, shown
     if reference:
         text = " %+.2f  %+.2f%%" % (change, change / reference * 100)
         head, plain = head + "\033[1;%sm%s\033[0m" % (colour, text), plain + text
@@ -676,6 +801,7 @@ def chart_lines(data, span, cols, lines):
 
 LOGO_URLS = ("https://assets.parqet.com/logos/symbol/%s?format=png&size=512",     # 512 px a side
              "https://financialmodelingprep.com/image-stock/%s.png")               # 100-250 px
+LOGO_ISIN_URL = "https://assets.parqet.com/logos/isin/%s?format=png&size=512"    # stocks known by ISIN
 TILE = (236, 238, 242)
 TILE_DARK = (30, 32, 42)      # for a logo drawn in white
 FONT = {  # 5 x 7, for the monogram of a company without a logo
@@ -865,7 +991,7 @@ def logo_grid(symbol, size):
 
 def _logo_grid(symbol, size):
     if not DEMO and SYMBOL.fullmatch(symbol or "") and symbol not in NO_LOGO:
-        for n, url in enumerate(LOGO_URLS):
+        for n, url in enumerate((LOGO_ISIN_URL,) if is_isin(symbol) else LOGO_URLS):
             name = "logo-%s-%s.png" % (urllib.parse.urlsplit(url).hostname, re.sub(r"[^A-Za-z0-9]", "_", symbol))
             data = cached(name, 30 * 86400, lambda: fetch(url % urllib.parse.quote(symbol, safe=""), timeout=6))
             try:
@@ -876,7 +1002,7 @@ def _logo_grid(symbol, size):
                 except OSError:
                     pass
         NO_LOGO.add(symbol)
-    return monogram(symbol or "?", size)
+    return monogram(label(symbol) if symbol else "?", size)
 
 
 def colour256(rgb):
@@ -913,6 +1039,7 @@ def logo_lines(symbol, cols, lines, rgb=False):
 
 
 def logo_caption(symbol, cols):
+    symbol = label(symbol)
     return "\033[1;34m%s\033[0m" % (" " * max(0, (cols - 1 - len(symbol)) // 2) + symbol)
 
 
@@ -1205,8 +1332,10 @@ def watch_rows():
                 row = dict(found)
         else:
             q = quote(symbol)
+            row["label"] = label(symbol)
             if q:
-                row.update(lastSalePrice=price(q["last"]), lastSaleChange="%+.2f" % q["change"],
+                row.update(lastSalePrice=price(q["last"]) + (" \u20ac" if q.get("currency") == "EUR" else ""),
+                           lastSaleChange="%+.2f" % q["change"],
                            change="%+.2f%%" % q["pct"],
                            deltaIndicator="down" if q["change"] < 0 else "up")
         out.append(row)
@@ -1231,7 +1360,7 @@ def search(query):
     try:
         data = json.loads(cached(key, 3600, lambda: fetch(url)))["data"] or []
     except (ValueError, KeyError, TypeError):
-        return []
+        data = []
     out = []
     for item in data:
         try:
@@ -1243,7 +1372,17 @@ def search(query):
                         "exchange": clean(item.get("exchange") or "")[:12]})
         except AttributeError:
             continue
-    return out[:10]
+    # what is not listed in the US - and the euro price of what is - from Lang & Schwarz;
+    # both get their share of the ten lines
+    # that search wants the name as the exchange writes it ("mercedes-benz"); a name typed
+    # with spaces is tried with hyphens and then by its first word
+    elsewhere = []
+    for variant in dict.fromkeys((query, query.replace(" ", "-"), query.split(" ")[0])):
+        elsewhere = ls_search(variant)
+        if elsewhere:
+            break
+    room = max(10 - len(elsewhere), 5)
+    return (out[:room] + elsewhere)[:10]
 
 
 def search_lines(query, results, index, cols, lines, waiting=False):
@@ -1254,7 +1393,7 @@ def search_lines(query, results, index, cols, lines, waiting=False):
     name_w = max(8, width - 21)
     for i, r in enumerate(results[:room]):
         text = "\033[1;34m%-6s\033[39;22m %-*s \033[90m%12s\033[39m" % (
-            r["symbol"][:6], name_w, r["name"][:name_w], r["exchange"][:12])
+            (r.get("label") or r["symbol"])[:6], name_w, r["name"][:name_w], r["exchange"][:12])
         out.append("\033[48;5;238m%s\033[K\033[0m" % text if i == index else text + "\033[0m")
     if not results:
         note = ("Type a name or a symbol." if not query else
@@ -1285,7 +1424,7 @@ def table_rows(cols, lines):
             shown = "%+.2f%%" % pct if pct is not None else r.get("change", "")
             down = r.get("deltaIndicator") == "down" or shown.startswith("-")
             text = "\033[1;34m%-6s\033[39;22m %-*s \033[1;35m%10s\033[39;22m \033[1;%sm%10s %9s\033[39;22m" % (
-                r.get("symbol", "")[:6], name_w, r.get("name", "")[:name_w],
+                (r.get("label") or r.get("symbol", ""))[:6], name_w, r.get("name", "")[:name_w],
                 r.get("lastSalePrice", "").lstrip("$")[:10],
                 "31" if down else "32", r.get("lastSaleChange", "")[:10], shown[:9])
             out.append((text, r.get("symbol", ""), key))

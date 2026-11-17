@@ -29,6 +29,10 @@ def load(demo, cache_home):
         module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
         sys.dont_write_bytecode = True
         loader.exec_module(module)
+
+    def offline(request, timeout=15):
+        raise OSError("a test must not reach the network: " + request.full_url)
+    module.OPENER.open = offline        # tests that need an answer patch fetch or OPENER themselves
     return module
 
 
@@ -1134,7 +1138,11 @@ class LiveSearch(Base):
     def test_the_query_cannot_leave_its_place_in_the_url(self):
         with mock.patch.object(self.ws, "fetch", return_value=self.answer()) as fetch:
             self.ws.search("a&b=c /../x")
-        self.assertTrue(fetch.call_args[0][0].endswith("?search=a%26b%3Dc%20%2F..%2Fx"))
+        urls = [c[0][0] for c in fetch.call_args_list]
+        self.assertTrue(urls[0].endswith("?search=a%26b%3Dc%20%2F..%2Fx"))
+        self.assertTrue(urls[1].endswith("&q=a%26b%3Dc%20%2F..%2Fx"))
+        for url in urls[1:]:                    # the spellings tried at the second source
+            self.assertRegex(url, r"&q=[A-Za-z0-9%.-]+$")
 
     def test_a_broken_answer_finds_nothing(self):
         for raw in (b"<html>busy</html>", b'{"data": null}', b'{"data": ["x", 3]}'):
@@ -1174,3 +1182,158 @@ class Main(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Elsewhere(Base):
+    """Stocks that are not listed in the US come from Lang & Schwarz and are known by ISIN."""
+    demo = False
+    VW, MB = "DE0007664039", "DE0007100000"
+    FOUND = [{"instrumentId": 34304, "displayname": "VOLKSWAGEN AG VORZUGSAKTIEN", "isin": VW, "wkn": 766403,
+              "categorySymbol": "STK"},
+             {"instrumentId": 685824, "displayname": "VOLKSWAGEN INTL18/UND.FLR", "isin": "XS1799939027",
+              "wkn": "A192QF", "categorySymbol": "BND"},
+             {"instrumentId": 7, "displayname": "Evil\x1b[2J AG", "isin": "DE000EVIL007", "wkn": "EVIL07",
+              "categorySymbol": "STK"},
+             {"instrumentId": 8, "displayname": "no isin", "isin": "../../etc", "wkn": 1, "categorySymbol": "STK"},
+             "rubbish"]
+    DAY = 1794812400000        # 2026-11-16 08:00 in Berlin
+
+    def net(self, intraday=None, history=None, previous=67.31, nasdaq=()):
+        def answer(url, timeout=15):
+            if "api.nasdaq.com/api/autocomplete" in url:
+                return json.dumps({"data": list(nasdaq)}).encode()
+            if "instrument/search" in url:
+                return json.dumps(self.FOUND).encode()
+            if "series=intraday" in url:
+                points = intraday if intraday is not None else [[self.DAY + i * 60000, 67.0 + i / 100] for i in range(60)]
+                return json.dumps({"info": {"plotlines": [{"id": "previousDay", "value": previous}]},
+                                   "series": {"intraday": {"data": points}}}).encode()
+            if "series=history" in url:
+                points = history if history is not None else [[self.DAY - (400 - i) * 86400000, 50.0 + i / 10] for i in range(400)]
+                return json.dumps({"info": {}, "series": {"history": {"data": points}}}).encode()
+            raise OSError("unexpected " + url)
+        return mock.patch.object(self.ws, "fetch", side_effect=answer)
+
+    def test_an_isin_is_not_a_ticker(self):
+        for symbol in ("AAPL", "BRK.B", "MRNOW", "766403", "", "DE00076640390", "de0007664039"):
+            self.assertFalse(self.ws.is_isin(symbol), symbol)
+        self.assertTrue(self.ws.is_isin(self.VW))
+        self.assertTrue(self.ws.SYMBOL.fullmatch(self.VW), "it must pass as a symbol everywhere")
+
+    def test_volkswagen_is_found_although_nasdaq_knows_nothing(self):
+        with self.net():
+            found = self.ws.search("volkswagen")
+        self.assertEqual(found[0], {"symbol": self.VW, "label": "766403", "name": "VOLKSWAGEN AG VORZUGSAKTIEN",
+                                    "exchange": "L&S EUR", "id": 34304})
+
+    def test_a_name_typed_with_spaces_is_still_found(self):
+        asked = []
+
+        def answer(url, timeout=15):
+            if "autocomplete" in url:
+                return b'{"data": []}'
+            asked.append(url.rsplit("&q=", 1)[1])
+            return json.dumps(self.FOUND if asked[-1] == "mercedes-benz" else []).encode()
+        with mock.patch.object(self.ws, "fetch", side_effect=answer):
+            found = self.ws.search("mercedes benz")
+        self.assertEqual(asked, ["mercedes%20benz", "mercedes-benz"])
+        self.assertEqual(found[0]["symbol"], self.VW)
+
+    def test_one_word_is_asked_once(self):
+        with self.net() as fetch:
+            self.ws.search("volkswagen")
+        self.assertEqual(len([c for c in fetch.call_args_list if "instrument/search" in c[0][0]]), 1)
+
+    def test_bonds_broken_isins_and_rubbish_are_left_out(self):
+        with self.net():
+            found = self.ws.search("volkswagen")
+        self.assertEqual([r["symbol"] for r in found], [self.VW, "DE000EVIL007"])
+        self.assertNotIn("\x1b", found[1]["name"])
+
+    def test_both_sources_share_the_ten_lines(self):
+        us = [{"symbol": "A%d" % i, "name": "US %d" % i, "asset": "STOCKS"} for i in range(25)]
+        with self.net(nasdaq=us):
+            found = self.ws.search("a")
+        self.assertEqual(len(found), 10)
+        self.assertEqual([r["symbol"] for r in found[-2:]], [self.VW, "DE000EVIL007"])
+        self.assertEqual(found[0]["symbol"], "A0")
+
+    def test_the_search_shows_the_wkn_in_the_narrow_column(self):
+        with self.net():
+            lines = self.ws.search_lines("volkswagen", self.ws.search("volkswagen"), 0, 80, 20)
+        self.assertIn("766403 VOLKSWAGEN AG VORZUGSAKTIEN", ANSI.sub("", lines[2]))
+        self.assertIn("L&S EUR", ANSI.sub("", lines[2]))
+
+    def test_the_quote_is_measured_against_yesterday(self):
+        with self.net():
+            q = self.ws.quote(self.VW)
+        self.assertAlmostEqual(q["last"], 67.59)
+        self.assertAlmostEqual(q["change"], 0.28)
+        self.assertAlmostEqual(q["pct"], 0.28 / 67.31 * 100)
+        self.assertEqual(q["currency"], "EUR")
+        self.assertIsNone(q["extended"])
+
+    def test_the_day_runs_on_the_clock_in_berlin(self):
+        with self.net():
+            data = self.ws.history(self.VW, "1d")
+        self.assertEqual(data["labels"], ("08:00", "08:59"))
+        self.assertEqual(len(data["points"]), 60)
+        self.assertEqual((data["reference"], data["reference_line"]), (67.31, True))
+        self.assertEqual(data["name"], "VOLKSWAGEN AG VORZUGSAKTIEN")
+        self.assertIsNone(data["dim_from"])
+
+    def test_longer_spans_are_cut_from_the_daily_closes(self):
+        now = self.DAY / 1000 + 3600
+        with self.net(), mock.patch.object(self.ws.time, "time", return_value=now):
+            month = self.ws.history(self.VW, "1m")
+            year = self.ws.history(self.VW, "1y")
+        self.assertTrue(20 <= len(month["points"]) <= 33, len(month["points"]))
+        self.assertTrue(360 <= len(year["points"]) <= 368, len(year["points"]))
+        self.assertEqual(month["reference"], month["points"][0])
+        self.assertFalse(month["reference_line"])
+        # the right edge is the price of this minute, not last night's close
+        self.assertAlmostEqual(month["last"], 67.59)
+        self.assertAlmostEqual(month["points"][-1], 67.59)
+        self.assertEqual(month["labels"][1], "11/16/2026")
+
+    def test_the_chart_names_the_currency(self):
+        with self.net():
+            lines = self.ws.chart_lines(self.ws.history(self.VW, "1d"), "1d", 90, 20)
+        self.assertIn(self.VW, ANSI.sub("", lines[0]))
+        self.assertIn("67.59 EUR", ANSI.sub("", lines[1]))
+
+    def test_dollar_charts_stay_as_they_were(self):
+        data = {"symbol": "NVDA", "name": "NVIDIA", "points": [1.0, 2.0], "labels": ("a", "b"), "last": 2.0,
+                "reference": 1.0, "reference_line": False, "dim_from": None, "extended": None}
+        self.assertNotIn("EUR", ANSI.sub("", self.ws.chart_lines(data, "1d", 90, 20)[1]))
+
+    def test_the_watchlist_shows_wkn_price_and_euro(self):
+        with self.net():
+            self.ws.watch(self.VW, "VOLKSWAGEN AG VORZUGSAKTIEN")
+            rows = self.ws.table_rows(100, 40)
+        text, symbol, section = rows[2]
+        self.assertEqual((symbol, section), (self.VW, "watch"), "the ISIN is what gets selected")
+        plain = ANSI.sub("", text)
+        self.assertTrue(plain.startswith("766403 VOLKSWAGEN AG VORZUGSAKTIEN"))
+        self.assertIn("67.59 \u20ac", plain)
+        self.assertIn("+0.28", plain)
+        self.assertLessEqual(len(plain), 99)
+
+    def test_an_unknown_isin_has_no_course_and_no_crash(self):
+        with self.net():
+            self.assertIsNone(self.ws.history("FR0000000001", "1d"))
+            self.assertIsNone(self.ws.quote("FR0000000001"))
+            self.assertEqual(self.ws.label("FR0000000001"), "FR0000000001")
+
+    def test_a_broken_answer_is_no_course(self):
+        for bad in ([], [["x", "y"]], "nope"):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.ws = load(False, tmp)
+                with self.net(intraday=bad):
+                    self.assertIsNone(self.ws.history(self.VW, "1d"))
+
+    def test_the_logo_is_asked_for_by_isin(self):
+        with mock.patch.object(self.ws, "fetch", return_value=b"nothing") as fetch:
+            self.ws.logo_grid(self.VW, 12)
+        self.assertEqual([c[0][0] for c in fetch.call_args_list if "logos" in c[0][0]],
+                         ["https://assets.parqet.com/logos/isin/%s?format=png&size=512" % self.VW])
