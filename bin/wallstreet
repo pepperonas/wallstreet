@@ -18,7 +18,7 @@
 # limitations under the License.
 
 PKG="wallstreet"
-VERSION="1.3.0"
+VERSION="1.4.0"
 widget_dir="$(cd "$(dirname "$0")/../lib/$PKG" && pwd)"
 
 case "$1" in
@@ -92,7 +92,7 @@ if [ "$width" -ge 110 ]; then
 		news=$(tmux split-window -v -l $((height * 45 / 100)) -P -F '#{pane_id}' -t "$chart" "$run $widget_dir/newsboat" 2>/dev/null)
 	fi
 	if [ -n "$news" ] && [ "$width" -ge 150 ]; then
-		tmux split-window -h -l 44 -t "$news" "$run $widget_dir/img2txt" >/dev/null 2>&1
+		tmux split-window -h -l 44 -t "$news" "$run $widget_dir/logo" >/dev/null 2>&1
 	fi
 	# Open the first feed, so the reader shows headlines instead of a feed list
 	[ -n "$news" ] && sleep 3 && tmux send-keys -t "$news" Enter >/dev/null 2>&1

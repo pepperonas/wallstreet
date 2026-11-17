@@ -28,7 +28,7 @@ class Scripts(unittest.TestCase):
 
     def test_the_expected_widgets_exist(self):
         self.assertEqual([w.name for w in WIDGETS],
-                         ["chart", "headlines", "img2txt", "jp2a", "newsboat", "quotes", "ticker"])
+                         ["chart", "headlines", "img2txt", "jp2a", "logo", "newsboat", "quotes", "ticker"])
 
     def test_launcher_starts_only_widgets_that_exist(self):
         used = set(re.findall(r"\$widget_dir/([a-z0-9]+)", code(ROOT / "bin/wallstreet")))

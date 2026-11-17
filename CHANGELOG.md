@@ -7,6 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-17
+
+### Added
+- **The logo of the selected company** beside the feed reader, drawn with half-block
+  characters on a light tile; it follows the selection like the chart. A company without a
+  logo, and every company in demo mode, gets a monogram in a colour of its own.
+  Logos come from financialmodelingprep.com or parqet.com and are kept for 30 days.
+
+### Changed
+- The logo takes the place of the news picture in the default layout. The picture widget
+  (`lib/wallstreet/img2txt`) is still there; `img2txt` (libcaca) is no longer needed for
+  the default screen.
+
 ## [1.3.0] - 2026-11-17
 
 ### Added

@@ -50,6 +50,112 @@ class Base(unittest.TestCase):
         self.tmp.cleanup()
 
 
+def png(width, height, pixels, colour=6):
+    """A PNG from rows of RGBA tuples, written with filter 0 - the test's own encoder."""
+    import struct, zlib
+    def chunk(kind, body):
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+    raw = b"".join(b"\0" + b"".join(bytes(p[:4] if colour == 6 else p[:3]) for p in row) for row in pixels)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, colour, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+class Logo(Base):
+    demo = False
+    RED, CLEAR = (200, 0, 0, 255), (0, 0, 0, 0)
+
+    def picture(self):
+        # left half red, right half transparent
+        return png(8, 8, [[self.RED] * 4 + [self.CLEAR] * 4 for _ in range(8)])
+
+    def test_a_png_is_decoded(self):
+        w, h, rows = self.ws.png_pixels(self.picture())
+        self.assertEqual((w, h), (8, 8))
+        self.assertEqual(rows[3][0], self.RED)
+        self.assertEqual(rows[3][7][3], 0)
+
+    def test_rgb_without_alpha_is_decoded(self):
+        _, _, rows = self.ws.png_pixels(png(2, 1, [[(1, 2, 3), (4, 5, 6)]], colour=2))
+        self.assertEqual(rows[0], [(1, 2, 3, 255), (4, 5, 6, 255)])
+
+    def test_what_is_not_a_small_png_is_refused(self):
+        huge = png(1, 1, [[self.RED]]).replace(b"\0\0\0\x01\0\0\0\x01", b"\0\x01\0\0\0\x01\0\0", 1)
+        for data in (b"", b"<html>404</html>", self.picture()[:40], huge):
+            with self.assertRaises((ValueError, Exception)):
+                self.ws.png_pixels(data)
+        with self.assertRaises(ValueError):
+            self.ws.png_pixels(huge)
+
+    def test_transparent_pixels_show_the_tile(self):
+        grid = self.ws.tile(self.ws.png_pixels(self.picture()), 12)
+        self.assertEqual(len(grid), 12)
+        self.assertEqual(grid[0][0], self.ws.TILE)            # the margin
+        self.assertEqual(grid[6][3], (200, 0, 0))             # the red half
+        self.assertEqual(grid[6][8], self.ws.TILE)            # the transparent half
+
+    def test_the_pane_is_drawn_with_half_blocks_and_fits(self):
+        with mock.patch.object(self.ws, "fetch", return_value=self.picture()):
+            lines = self.ws.logo_lines("NVDA", 44, 17)
+        self.assertLessEqual(len(lines), 17)
+        blocks = [ANSI.sub("", l) for l in lines if "\u2580" in l]
+        self.assertEqual(len(blocks), 15)
+        for b in blocks:
+            self.assertLess(len(b), 44)
+            self.assertEqual(len(b.strip()), 30)
+        self.assertIn("NVDA", ANSI.sub("", lines[-1]))
+        self.assertTrue(all(l.endswith("\033[0m") for l in lines if "\u2580" in l))
+
+    def test_a_small_pane_gets_a_small_logo(self):
+        with mock.patch.object(self.ws, "fetch", return_value=self.picture()):
+            lines = self.ws.logo_lines("NVDA", 20, 8)
+        self.assertLessEqual(len(lines), 8)
+        self.assertTrue(all(len(ANSI.sub("", l)) < 20 for l in lines))
+
+    def test_no_logo_means_a_monogram_and_one_question_per_source(self):
+        with mock.patch.object(self.ws, "fetch", return_value=b"<html>not found</html>") as fetch:
+            first = self.ws.logo_grid("ZZQQ", 20)
+            self.ws.logo_grid("ZZQQ", 20)
+        self.assertEqual(fetch.call_count, len(self.ws.LOGO_URLS))
+        self.assertEqual(first, self.ws.monogram("ZZQQ", 20))
+        self.assertIn((255, 255, 255), [px for row in first for px in row])
+        self.assertFalse([f for f in os.listdir(self.ws.CACHE) if f.startswith("logo")])
+
+    def test_the_second_source_is_asked_when_the_first_has_nothing(self):
+        answers = [b"nope", self.picture()]
+        with mock.patch.object(self.ws, "fetch", side_effect=lambda *a, **k: answers.pop(0)):
+            grid = self.ws.logo_grid("NVDA", 12)
+        self.assertEqual(grid[6][3], (200, 0, 0))
+
+    def test_a_logo_is_fetched_once(self):
+        with mock.patch.object(self.ws, "fetch", return_value=self.picture()) as fetch:
+            self.ws.logo_grid("NVDA", 12)
+            self.ws.logo_grid("NVDA", 12)
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_only_a_symbol_reaches_the_address(self):
+        with mock.patch.object(self.ws, "fetch", return_value=self.picture()) as fetch:
+            for bad in ("../../etc", "A B", "x?y=1", "", "A/B"):
+                self.ws.logo_grid(bad, 12)
+        fetch.assert_not_called()
+
+    def test_monograms_differ_by_symbol(self):
+        self.assertNotEqual(self.ws.monogram("AB", 20), self.ws.monogram("CD", 20))
+
+    def test_colours_stay_inside_the_256_palette(self):
+        for rgb in ((0, 0, 0), (255, 255, 255), (118, 185, 0), (128, 128, 128), (255, 0, 255), (3, 3, 3)):
+            self.assertTrue(16 <= self.ws.colour256(rgb) <= 255)
+        self.assertEqual(self.ws.colour256((255, 255, 255)), 231)
+        self.assertEqual(self.ws.colour256((0, 0, 0)), 16)
+
+
+class LogoDemo(Base):
+    def test_demo_mode_never_asks_the_network(self):
+        with mock.patch.object(self.ws, "fetch") as fetch:
+            lines = self.ws.logo_lines("MRNOW", 44, 17)
+        fetch.assert_not_called()
+        self.assertTrue(any("\u2580" in l for l in lines))
+
+
 class Clean(Base):
     def test_escape_sequences_lose_their_escape(self):
         self.assertNotIn("\x1b", self.ws.clean("A\x1b[31mB"))
