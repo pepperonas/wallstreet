@@ -25,6 +25,7 @@
     "features": [
       "Interactive quote table: most active stocks, Nasdaq-100 movers, advancers and decliners; select a row by click or arrow keys",
       "Chart of the selected stock in braille characters: the trading day from the opening bell with the previous close as a line, one month, three months, year to date or a year",
+      "Twelve indices: S&P 500, Dow Jones, NASDAQ 100, DAX and EURO STOXX 50 at the top of the table, seven more by search",
       "Search for any US-listed stock or ETF by name or symbol, and for European stocks such as Volkswagen or Mercedes-Benz by name, WKN or ISIN (in euro, from Lang & Schwarz), with a watchlist that is kept between runs",
       "Three tickers: gainers in green, losers in red, headlines in yellow",
       "Feed reader (newsboat) and press photos as coloured ASCII art from the same feed list",
@@ -37,7 +38,7 @@
     ],
     "limits": [
       "wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.",
-      "Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Charts go back one year at most.",
+      "Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Twelve indices, from the S&P 500 to the DAX and the Nikkei, are shown as indications published by ING. Charts go back one year at most.",
       "The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.",
       "It needs tmux and Python 3.9 or newer; there is no Windows version.",
       "Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done."

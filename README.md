@@ -157,6 +157,15 @@ logo, below 110 columns the quote table and the tickers only.
 |---|---|
 | ![The chart pane: symbol, price, change, span tabs and the course since the start of the year](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/chart.png) | ![The search: results for a query, one of them marked, the input line below](https://raw.githubusercontent.com/pepperonas/wallstreet/main/docs/screenshots/search.png) |
 
+### Indices
+
+The table begins with five indices — S&P 500, Dow Jones, NASDAQ 100, DAX, EURO STOXX 50.
+Seven more (MDAX, TecDAX, SDAX, CAC 40, SMI, Nikkei 225, Hang Seng) are found by the search
+and can be put on the watchlist. An index is not traded, so what you see is an
+**indication**: the value ING computes for its customers from 8:00 to 22:00 Berlin time,
+also while the index's own exchange is closed. It can differ from the official close by a
+few points. Other indices, commodities, currencies and crypto are not covered.
+
 ### Stocks outside the US
 
 Nasdaq only knows what is listed on a US exchange. Search for *volkswagen*, *mercedes*,
@@ -184,6 +193,7 @@ needs libcaca) is still in the package but no longer on the default screen.
 |---|---|---|
 | quotes, gainers, losers | `api.nasdaq.com/api/marketmovers` — no key, no account | every 55 s |
 | search | `api.nasdaq.com/api/autocomplete/slookup` — stocks and ETFs; notes and mutual funds are left out, they have no course to draw | on typing, an hour per query |
+| indices: quote, chart | `component-api.wertpapiere.ing.de` (ING) — indications, 8:00 to 22:00 Berlin time | the day every minute, daily values every hour |
 | stocks outside the US: search, quote, chart | `ls-tc.de` (Lang & Schwarz Exchange) — in euro, 8:00 to 23:00 Berlin time; found by name, WKN or ISIN | search an hour, the day every minute, daily closes every hour |
 | chart of one stock | `api.nasdaq.com/api/quote/<symbol>/chart` | every minute (day), every hour (longer spans) |
 | the day's result, yesterday's close, after-hours price | `api.nasdaq.com/api/quote/<symbol>/info` | every minute |

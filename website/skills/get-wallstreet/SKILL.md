@@ -35,7 +35,7 @@ page itself, browsers with WebMCP expose the same data as the tools `get_latest_
 ## Limits
 
 - wallstreet is a display, not a trading or analysis tool; it places no orders and gives no advice.
-- Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Charts go back one year at most.
+- Quotes and charts cover stocks and ETFs listed on US exchanges, as published by Nasdaq, and stocks traded at the Lang & Schwarz Exchange in euro. Twelve indices, from the S&P 500 to the DAX and the Nikkei, are shown as indications published by ING. Charts go back one year at most.
 - The data comes from third-party services that may change or stop answering; wallstreet is not affiliated with Nasdaq, BBC, CNBC, MarketWatch or the WSJ.
 - It needs tmux and Python 3.9 or newer; there is no Windows version.
 - Developed and run on macOS with Apple silicon; on Linux the test suite runs, a full run in a terminal has not been done.

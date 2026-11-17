@@ -59,6 +59,23 @@ Dustin Kirkland's `hollywood` (Apache-2.0) and given data sources that answer. R
 - A lone ESC is the Escape key only once nothing follows (`parse_input(final=True)`);
   before 1.3.0 it stayed in the buffer forever.
 
+## Indices (1.7.0)
+
+- `INDICES` is a fixed table (ISIN, short name, name, by-names); the first `INDEX_ROWS`
+  stand in the table, all are found by `index_search`. Values from ING's chart API
+  (`…/charts/shm/<ISIN>?timeRange=Intraday|OneYear`; other ranges such as YearToDate are
+  refused, so every longer span is cut from OneYear). Indications, 8:00-22:00 Berlin.
+- The answer has no previous close: it is the last daily bar **dated before the day of the
+  intraday series** (the newest bar may already be today's).
+- `quote()`/`history()` branch on `is_index` before `is_isin` - an index's ISIN would
+  otherwise go to Lang & Schwarz, which has no indices. Nasdaq has only its own (NDX, COMP).
+- Checked and without an answer at ING: FTSE 100, Russell 2000, VIX, STOXX 600.
+- Funds: `is_etf()` (which asset class Nasdaq answered under) turns the logo sources
+  round - FMP draws the family name, parqet the issuer's mark (SPY: State Street).
+- A full run for testing: start the tmux **server** with `XDG_CACHE_HOME=<dir>` on its own
+  socket (`tmux -L`); panes take their environment from the server, and without that the
+  run writes into the user's real watchlist (it did, once).
+
 ## Stocks outside the US (1.6.0)
 
 - Nasdaq's API knows US listings only (user report: Volkswagen and Mercedes-Benz not

@@ -1368,9 +1368,12 @@ class Indices(Base):
                     points = year if year is not None else [[self.DAY - 3 * 86400000 - (249 - i) * 86400000, 7000.0 + i] for i in range(250)]
                 return json.dumps({"instruments": [{"data": points}]}).encode()
             if "autocomplete" in url:
-                return b'{"data": []}'
+                return json.dumps({"data": [{"symbol": "DAX", "name": "Global X DAX Germany ETF", "asset": "ETF"}]}).encode()
             if "instrument/search" in url:
                 return b"[]"
+            if "/info?" in url:
+                return json.dumps({"data": {"primaryData": {"lastSalePrice": "$40.00", "netChange": "+1.00",
+                                                            "percentageChange": "+2.56%"}}}).encode()
             raise OSError("unexpected " + url)
         return mock.patch.object(self.ws, "fetch", side_effect=answer)
 
@@ -1400,6 +1403,7 @@ class Indices(Base):
         with self.net():
             found = self.ws.search("dax")
         self.assertEqual(found[0], {"symbol": self.DAX, "label": "DAX", "name": "Deutscher Aktienindex", "exchange": "INDEX"})
+        self.assertEqual([r["symbol"] for r in found[4:]], ["DAX"], "the fund of the same name comes after the indices")
 
     def test_the_day_is_measured_against_the_last_close_before_it(self):
         with self.net():
@@ -1426,6 +1430,21 @@ class Indices(Base):
         self.assertAlmostEqual(month["points"][-2], 7249.0)
         self.assertEqual(month["labels"][1], "11/16/2026")
         self.assertTrue(20 <= len(month["points"]) <= 34)
+
+    def test_todays_bar_in_the_year_is_replaced_not_doubled(self):
+        now = self.DAY / 1000 + 7200
+        year = [[self.DAY - 8 * 3600000 - (30 - i) * 86400000, 7000.0 + i] for i in range(31)]   # ends Monday 00:00
+        with self.net(year=year), mock.patch.object(self.ws.time, "time", return_value=now):
+            month = self.ws.history(self.SPX, "1m")
+        self.assertAlmostEqual(month["points"][-1], 7499.0)
+        self.assertAlmostEqual(month["points"][-2], 7029.0)
+        self.assertNotIn(7030.0, month["points"])
+
+    def test_the_indices_stand_above_the_watchlist(self):
+        with self.net():
+            self.ws.watch("NVDA", "NVIDIA")
+            titles = [ANSI.sub("", r[0]) for r in self.ws.table_rows(100, 40) if r[1] is None and r[0] and "-" not in r[0]]
+        self.assertEqual(titles[:2], ["INDICES", "WATCHLIST"])
 
     def test_the_table_begins_with_the_indices(self):
         with self.net():

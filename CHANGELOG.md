@@ -7,6 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-17
+
+### Added
+- **Indices.** The table begins with S&P 500, Dow Jones, NASDAQ 100, DAX and EURO STOXX 50;
+  MDAX, TecDAX, SDAX, CAC 40, SMI, Nikkei 225 and Hang Seng are found by the search
+  ("dax", "s&p 500", "nikkei") and go on the watchlist like a stock. Each has the chart
+  with all five spans. The values are indications published by ING, from 8:00 to 22:00
+  Berlin time - also while the index's own exchange is closed.
+
+### Changed
+- **A fund shows the logo of its family** ("SPDR", "Vanguard", "Invesco") instead of the
+  issuer's mark: for an ETF the second logo source is asked first.
+
 ## [1.6.0] - 2026-11-17
 
 ### Added
